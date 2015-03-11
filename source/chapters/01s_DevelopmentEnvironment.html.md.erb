@@ -1,0 +1,397 @@
+---
+title: Setting Up a Development Environment
+slug: setting-up-a-development-environment
+date: 002/01/01
+number: 1.5
+toc:
+  - title: On OS X
+  - title: On Ubuntu
+  - title: Testing
+  - title: Deployment
+  - title: Configuration
+---
+
+# Setting Up a Development Environment
+
+<% note do %>
+
+*Chances are you can skip this chapter* If you do then you will need the following installed and configured to your liking; ruby 2.1.5, git, and RethinkDB.
+
+<% end %>
+
+
+## On OS X
+
+### Installing Homebrew
+
+If you haven't already, install [Homebrew](http://brew.sh).
+
+In terminal run the following:
+
+```ruby
+$ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+```
+
+### Installing Git
+
+Run:
+
+```sh
+$ brew install git
+```
+
+Then make sure to set the configuration to your details:
+
+```sh
+$ git config --global color.ui true
+$ git config --global user.name "YOUR NAME"
+$ git config --global user.email "YOUR@EMAIL.com"
+```
+
+Now comes the hard part where you are likely to screw something up; configuring SSH with GitHub:
+
+<% tip do %>
+
+GitHub has an [excellent guide](https://help.github.com/articles/generating-ssh-keys) for SSH stuff.
+
+<% end %>
+
+First generate a new key:
+
+```sh
+$ ssh-keygen -t rsa -C "YOUR@EMAIL.com"
+```
+
+<% warning do %>
+
+It is a good idea to check for existing keys first:
+
+```sh
+$ ls -al ~/.ssh
+```
+
+If you see keys already there then figure out what those keys are before you proceed
+
+<% end %>
+
+After some prompts you will have a new key; add it to ssh-agent:
+
+```sh
+# start the ssh-agent
+$ eval "$(ssh-agent -s)"
+
+# add the key
+$ ssh-add ~/.ssh/id_rsa
+```
+
+Then you will need to add it to your GitHub account. You can quickly copy it to the clipboard by using pbpaste:
+
+```sh
+$ pbcopy < ~/.ssh/id_rsa.pub
+```
+
+Once you have done that check that its working by running:
+
+```sh
+$ ssh -T git@github.com
+```
+
+### Installing Ruby
+
+To install and manage ruby we will be using rbenv.
+
+Install it using brew:
+
+```sh
+$ brew install rbenv
+```
+
+Then add rbenv's path to PATH:
+
+```sh
+$ echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bash_profile
+```
+
+Make sure `rbenv init` is called with every bash session:
+
+```sh
+$ echo 'eval "$(rbenv init -)"' >> ~/.bash_profile
+```
+
+*Zsh note*: Modify ~/.zshrc instead of ~/.bash_profile.
+
+Now install ruby 2.1.5 and set it as the global version:
+
+```sh
+$ rbenv install 2.1.5
+$ rbenv global 2.1.5
+```
+
+### Installing RethinkDB
+
+First install it with brew:
+
+```sh
+$ brew update && brew install rethinkdb
+```
+
+Now add some helpful aliases to ~/.bash_profile for starting/stopping it:
+
+```sh
+alias rethinkdb.start='launchctl load /usr/local/opt/rethinkdb/homebrew.mxcl.rethinkdb.plist'
+alias rethinkdb.stop='launchctl unload /usr/local/opt/rethinkdb/homebrew.mxcl.rethinkdb.plist'
+```
+
+Run `$ source ~/.bash_profile` to update the shell environment.
+
+Run `$ rethinkdb.start` and then visit [http://localhost:8080](http://localhost:8080)
+
+If you want RethinkDB to start at boot you can do the following:
+
+```sh
+$ ln -sfv /usr/local/opt/rethinkdb/*.plist ~/Library/LaunchAgents
+```
+
+## On Ubuntu
+
+First we have to install the dependencies:
+
+```sh
+$ sudo apt-get update
+$ sudo apt-get install git-core curl zlib1g-dev build-essential libssl-dev libreadline-dev libyaml-dev libcurl4-openssl-dev
+```
+
+### Installing Git
+
+Run:
+
+```sh
+$ sudo apt-get install git
+```
+
+Then make sure to set the configuration to your details:
+
+```sh
+$ git config --global color.ui true
+$ git config --global user.name "YOUR NAME"
+$ git config --global user.email "YOUR@EMAIL.com"
+```
+
+Now comes the hard part where you are likely to screw something up; configuring SSH with GitHub:
+
+<% tip do %>
+
+GitHub has an [excellent guide](https://help.github.com/articles/generating-ssh-keys) for SSH stuff.
+
+<% end %>
+
+First generate a new key:
+
+```sh
+$ ssh-keygen -t rsa -C "YOUR@EMAIL.com"
+```
+
+<% warning do %>
+
+It is a good idea to check for existing keys first:
+
+```sh
+$ ls -al ~/.ssh
+```
+
+If you see keys already there then figure out what those keys are before you proceed
+
+<% end %>
+
+After some prompts you will have a new key; add it to ssh-agent:
+
+```sh
+# start the ssh-agent
+$ eval "$(ssh-agent -s)"
+
+# add the key
+$ ssh-add ~/.ssh/id_rsa
+```
+
+Then will need to add it to your GitHub. You can quickly copy it by using xclipe:
+
+```sh
+$ sudo apt-get install xclip
+# Downloads and installs xclip
+
+$ xclip -sel clip < ~/.ssh/id_rsa.pub
+```
+
+Once you have done that check that it is working by running:
+
+```sh
+$ ssh -T git@github.com
+```
+
+### Installing Ruby
+
+Install rbenv by cloning it:
+
+```sh
+$ cd
+$ git clone git://github.com/sstephenson/rbenv.git .rbenv
+$ echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
+$ echo 'eval "$(rbenv init -)"' >> ~/.bashrc
+$ exec $SHELL
+
+$ git clone git://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
+$ echo 'export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"' >> ~/.bashrc
+$ exec $SHELL
+```
+
+*Zsh note*: Modify ~/.zshrc instead of ~/.bashrc.
+
+<% tip do %>
+
+When you install rbenv this way you can upgrade it by git pulling. For example:
+
+```sh
+$ cd ~/.rbenv
+$ git pull
+```
+
+The same goes for ruby-build:
+
+```sh
+$ cd ~/.rbenv/plugins/ruby-build
+$ git pull
+```
+
+The master branch is always working (yeah rational branching!) so you don't have to worry about things exploding.
+
+<% end %>
+
+Then set our ruby version to 2.1.5:
+
+```sh
+$ rbenv install 2.1.5
+$ rbenv global 2.1.5
+```
+
+### Installing RethinkDB
+
+First add the rethinkdb ppa to your repositories:
+
+```sh
+$ sudo add-apt-repository ppa:rethinkdb/ppa
+```
+
+<% note do %>
+
+If add-app-repository doesn't exist then you need install python-software-properties:
+
+```sh
+$ sudo apt-get update
+$ sudo apt-get install python-software-properties
+```
+
+You can also manually add it:
+
+```sh
+$ source /etc/lsb-release && echo "deb http://download.rethinkdb.com/apt $DISTRIB_CODENAME main" | sudo tee /etc/apt/sources.list.d/rethinkdb.list
+wget -qO- http://download.rethinkdb.com/apt/pubkey.gpg | sudo apt-key add -
+```
+
+<% end %>
+
+Then install it:
+
+```sh
+$ sudo apt-get update
+$ sudo apt-get install rethinkdb
+```
+
+To start it simply run:
+
+```sh
+$ rethinkdb
+```
+
+Press <kbd>CRTL</kbd> + <kbd>c</kbd> to close
+
+<% tip do %>
+
+If you want it to run it in the background you can use linux tools.
+
+Run:
+
+```sh
+$ rethinkdb &
+```
+
+And use jobs to stop it:
+
+```sh
+$ jobs
+```
+
+<% end %>
+
+
+## Testing
+
+We will be testing all our code using [rspec](http://rspec.info). A lot of the tests we write will serve as a form of documentation; we will know what we are going to build before we will build it. We will follow [http://betterspecs.org](http://betterspecs.org) and do our best to conform to best practices.
+
+First install rspec globally:
+
+```sh
+$ gem install rspec
+```
+
+<% note do %>
+
+Be sure to run `$ rbenv rehash` after.
+
+<% end %>
+
+When there is a spec and it's not clear where to put it, drop it in a folder named _spec_. You can then run rspec against the specs directly:
+
+```sh
+$ rspec
+```
+
+## Deployment
+
+Deployment tools are often complicated and messy. They abstract our apps behind countless layers abstraction and leave us with no real idea how the fuck they work. Most of this abstraction is there to solve problems 99% of us will never have. Most of the problems we end up having are with the abstractions.
+
+We will keep our tools simple and straightforward. For configuring/booting our apps we will use Rackup. Managing our app's processes will be done with a Procfile. To deploy our apps we will use heroku buildpacks. App settings will be stored in ENV. Locally we will manage processes and our env using [foreman](https://github.com/ddollar/foreman).
+
+<% note do %>
+
+Heroku build packs can be used on any host with Docker and [Buildstep](https://github.com/progrium/buildstep)
+
+<% end %>
+
+
+## Configuration
+
+Most frameworks handle confuguration with yaml or ruby files that are placed in environments/ or config/ and then loaded and parsed. This is overkill. If you cant accomplish your config using env vars then you are structuring your apps wrong.  
+
+For example, database configuration is typically done like this:
+
+```yaml
+production:
+  mongoid:
+    database: "database"
+    port: ""
+    url: ""
+```
+
+When you adopt the constraint of env vars you realize that this multiline yaml configuration can be accomplished with a single uri string. So instead of initializing your database with three or four lines you just pass in one:
+
+```ruby
+client = MongoClient.from_uri(ENV['MONGO_URI'])
+```
+
+<% tip do %>
+
+Most Heroku addons provide their configuration through env vars.
+
+<% end %>
+
+Tools like foreman make the management of ENV vars dead simple. There is no excuse to adopt an overly complex configuration system. /rant

@@ -1,0 +1,812 @@
+---
+title: MVC on Rack
+slug: mvc-on-rack
+date: 06/01/01
+number: 5
+toc:
+  - title: Models
+  - title: Tasks Controller
+  - title: A Better Controller
+  - title: A Quick Look at Better Views
+  - title: Helpers
+  - title: Multiple Controllers
+---
+
+# MVC on Rack
+
+If you are like me you have probably never built a Ruby app without utilizing a framework. Building an app directly on the Rack will help cement the concepts we have already learned and teach us some new ones.
+
+First, need to decide what we are going to build. Todo apps and weather apps are always useful. Let's build a todos app for weather. We can call it WeatherTasks.
+
+Our app's structure will look like this:
+
+```markdown
+- app
+  - controllers
+    - tasks.rb
+  - models
+    - Task.rb
+  - views
+  - application.rb
+- lib
+  - base_controller.rb
+- spec
+  - app_spec.rb
+  - lib
+    - base_controller_spec.rb
+  - controllers
+    - tasks_spec.rb
+  - models
+    - task_spec.rb
+  - spec_helper.rb
+- .rspec
+- Gemfile
+- Rakefile
+- config.ru
+- README.md
+```
+
+<% tip do %>
+
+You can quickly replicate the directory structure by;
+
+1. Cloning the repo and checking out the first commit
+2. You can use [a script](https://gist.github.com/k2052/436355abcc2de24e5a9e) to create it automatically
+
+<% end %>
+
+Now add dependencies to the Gemfile:
+
+```ruby
+source "https://rubygems.org"
+
+gem 'puma'
+gem 'rack'
+gem 'tilt'
+gem 'slim'
+
+group :development, :test do
+  gem 'rack-test'
+  gem 'rspec'
+  gem 'rake'
+end
+```
+
+Then run:
+
+```sh
+$ bundle install
+```
+
+Now we need to get our specs running. Add the following to your .rspec file:
+
+```sh
+--color
+--format progress
+--require ./spec/spec_helper
+```
+
+Then add the following to `spec/spec_helper.rb`:
+
+```ruby
+require 'rack/test'
+require 'rack'
+
+RSpec.configure do |config|
+  config.include Rack::Test::Methods
+end
+```
+
+The rack-test methods are going to be looking for an app instance, so let's create one.
+
+We will use Rack::Builder to construct our app's instance.
+
+In `config.ru` add the following:
+
+```ruby
+App = Rack::Builder.new do
+end
+```
+
+This gives us an app instance that we can pass to rack-test:
+
+```ruby
+RSpec.configure do |config|
+  config.include Rack::Test::Methods
+
+  let(:app) do
+    path = File.expand_path('../config.ru', File.dirname(__FILE__))
+    Rack::Builder.parse_file(path).first
+  end
+end
+```
+
+This parses our config.ru file with builder and returns the first app instance.
+
+Now let's add a spec task to the Rakefile:
+
+```ruby
+require 'rspec/core/rake_task'
+
+RSpec::Core::RakeTask.new(:spec)
+
+task default: :spec
+```
+
+Test that everything is working by running:
+
+```sh
+$ bundle exec rake
+0 examples, 0 failures
+```
+
+<%= commit '1', 'mvc-on-rack' %>
+
+## Models
+
+We need a Task model; to keep it simple we will return all data statically.
+
+Let'a add a spec to test that our static model instances are returned:
+
+```ruby
+describe Task do
+  describe '.all' do
+    it 'returns all the tasks' do
+      expect(Task.all().length).to eq 3
+      expect(Task.all()[0]).to be_an_instance_of Task
+    end
+  end
+end
+```
+
+Then a model class to fulfill this spec:
+
+```ruby
+class Task
+  attr_accessor :name
+
+  # Set attributes by key and value
+  def initialize(attrs)
+    attrs.each {|k,v| send("#{k}=",v)}
+  end
+
+  def self.all
+    [Task.new(name: 'Make it rain!'),
+     Task.new(name: 'Snow is kinda cold!'),
+     Task.new(name: 'Snow is frozen')]
+  end
+end
+```
+
+Now run the spec:
+
+```sh
+$ bundle exec rake
+weather_tasks/spec/models/task_spec.rb:1:in <top (required)>: uninitialized constant Task (NameError)
+```
+
+We are getting warnings about the class not existing.
+
+The straightforwad way to solve this would be to require the Task model in our spec file, but we would have to do this for every class we wrote a spec for. Managing dependencies that way would end up look like something written in voynich not Ruby. Instead, we will build an autoloader into our application class and then require it from our spec helper.
+
+Make a file called `app/application.rb`:
+
+```ruby
+$LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__))
+
+require 'rack'
+
+autoload :Task, 'models/Task'
+```
+
+<% warning do %>
+
+Autoload isn't thread safe except in Ruby versions > 2.0.See: [https://github.com/rkh/rack-protection/issues/45](https://github.com/rkh/rack-protection/issues/45)
+
+<% end %>
+
+Then in config.ru add the following:
+
+```ruby
+require_relative 'app/application'
+```
+
+Now run our specs again:
+
+```sh
+$ bundle exec rake
+
+Finished in 0.00097 seconds (files took 0.11474 seconds to load)
+1 example, 0 failures
+```
+
+They are passing! That does it for our models!
+
+<%= commit '2', 'mvc-on-rack' %>
+
+## Tasks Controller
+
+Our task's controller will have a single route that returns all the weather tasks. We will want both a json response and html.
+
+The spec for this is:
+
+```ruby
+describe TasksController do
+  describe 'GET /tasks' do
+    context 'Client Accepts JSON' do
+      it 'returns all the tasks as json' do
+        header 'ACCEPT', 'application/json'
+        get '/tasks'
+
+        expect(last_response.status).to eq 200
+        expect(last_response.body).to eq Task.all().to_json
+      end
+    end
+
+    context 'Client Accepts HTML' do
+      it 'returns all the tasks as html' do
+        names = Task.all().map { |task| task.name }
+
+        visit '/tasks'
+
+        expect(last_response.status).to eq 200
+        expect(page).to have_selector('li', text: /#{names.join("|")}/, count: 3)
+      end
+    end
+  end
+end
+```
+
+Now add a tasks controller in `app/controllers/tasks.rb`:
+
+```ruby
+class TasksController
+  def initialize
+    @app = app
+  end
+
+  def call(env)
+  end
+end
+```
+
+Then add an autoload declaration for our controller to app/application.rb:
+
+```ruby
+autoload :TasksController, 'controllers/tasks'
+```
+
+Now add the controller to our App:
+
+```ruby
+App = Rack::Builder do
+  # maps an instance of our TasksController to `/tasks`.
+  map '/tasks' do
+    run TasksController.new
+  end
+end
+```
+
+We need to return two types of responses; One for when the client requests json and another for html. To do this we can check the accept header in env:
+
+```ruby
+if env['HTTP_ACCEPT'] == 'application/json'
+  # do stuff
+end
+```
+
+Under real world circumstances our accept header checking would need to be a lot more robust than this but when we control all the clients we can cheat a little.
+
+<% tip do %>
+
+For easy and robust accept header parsing checkout [rack-accept](https://github.com/mjackson/rack-accept)
+
+<% end %>
+
+Now we just need to use the check in our call method:
+
+```ruby
+def call(env)
+  if env['HTTP_ACCEPT'] == 'application/json'
+    [200, {"Content-Type" => "application/json"}, [Task.all.to_json]]
+  else
+    resp = '<ul>'
+    Task.all.each do |task|
+      resp << "<li>#{task.name}</li>"
+    end
+    resp << '</ul>'
+    [200, {"Content-Type" => "text/html"}, [resp]]
+  end
+end
+```
+
+Running our specs now will result in some pretty green:
+
+```sh
+$ bundle exec spec
+....
+```
+
+<%= commit '3', 'mvc-on-rack' %>
+
+## A Better Controller
+
+Having our controllers as pure Rack apps has some drawbacks, namely, it's hard to route methods to actions. The simplest way to add some routing is to put it on our controllers. When we hit the call method we can then figure out which method should route to a given path.
+
+For example:
+
+```ruby
+class TasksController
+  self.routes = {
+    '/tasks': :all
+  }
+
+  def call(env)
+    if route = @@routes[env['PATH_INFO']]
+      self.send(route, env)
+    else
+      Rack::Response.new('Not found', 404)
+    end
+  end
+
+  def all env
+    # ...
+  end
+end
+```
+
+The route matching here is pretty dumb. If for example, our path had a trailing slash this would fail to route. So, how do we match the edge cases? The trick is to turn a string for the route into a regular expression. This is fundamentally how most routers work, they take a route string and then "compile" it into a regular expression.
+
+Before we get started with this let's turn `routes` into an accessor method so we can cache our regular expressions:
+
+```ruby
+def self.routes=(routes)
+  routes.each do |route_string, method|
+    @routes.push {route: compile(route_string), handler: method}
+  end
+end
+```
+
+This loops through our routes and calls compile on the route's path. A naive implementation of compile is to split the path string into segments:
+
+```ruby
+def self.compile
+  postfix = '/' if path =~ /\/\z/
+  segments = path.split('/')
+  /\A#{segments.join('/')}#{postfix}\z/
+end
+```
+
+Now we need to add a method to find a matching route
+
+```ruby
+def find_route path_info
+  @@routes.each do |route|
+    return route if route.match(path_info)
+  end
+
+  nil
+end
+```
+
+Now our call method only needs to call find_route:
+
+```ruby
+def call(env)
+  if route = find_route env['PATH_INFO']
+    self.send(route[:handler], env)
+  else
+    Rack::Response.new('Not found', 404)
+  end
+end
+```
+
+This works but it has some major flaws;
+
+1. It doesn't support splats
+2. It wont handle strange characters
+3. It wont allow us to route by request method
+
+We can hackishly support the first two by allowing a regular expression as our route string:
+
+```ruby
+def self.compile path
+  if path.respond_to? :match
+    path
+  elsif path.respond_to? :to_str
+    postfix  = '/' if path =~ /\/\z/
+    segments = path.split('/')
+    /\A#{segments.join('/')}#{postfix}\z/
+  else
+    raise TypeError, path
+  end
+end
+```
+
+<% note do %>
+
+Of course, it would be ideal to support splats and all edge cases of strange characters, but that is beyond the scope of this chapter. We will cover a fully featured router when we build our framework.
+
+<% end %>
+
+The simplest way to support routing by request method is to make the assumption that all methods will only respond to one request method. This way we can key our routes by request methods, making it easy to determine what method responds to which request method.
+
+Let's change our call method to pass find_route a request_method and path_info:
+
+```ruby
+def call(env)
+  if route = find_route env['REQUEST_METHOD'], env['PATH_INFO']
+    self.send(route[:handler], env)
+  else
+    Rack::Response.new('Not found', 404)
+  end
+end
+```
+
+Now modify find_route to lookup routes by request_method:
+
+```ruby
+def find_route method, path
+  @@routes[method].each do |route|
+    return route if route.match(path)
+  end
+
+  nil
+end
+```
+
+Then modify our routes API to look like this:
+
+```ruby
+self.routes = [
+  {path: '/tasks', handler: :all, method: 'GET'}
+]
+```
+
+Now modify our routes accessor to accept an array of route hashes:
+
+```ruby
+def self.routes=(routes)
+  routes.each do |route|
+    method = route['method'] || 'GET' # makes the method optional
+    @routes[method].push {route: compile(route['path']), handler: route['handler']}
+  end
+end
+```
+
+This works but it is ugly. It would be nice to have convenience methods for adding routes, something like `get '/', :all` etc
+
+To do this we will need to split up our route adding code into a separate method:
+
+```ruby
+def self.add_route(path: path, handler: handler, method: 'GET')
+  @routes[method].push {route: compile(path), handler: handler}
+end
+
+def self.routes
+  @routes ||= {'GET': [], 'POST': [], 'PUT': [], 'DELETE': []}
+end
+```
+
+Now in our routes setter we will call add_route:
+
+```ruby
+def self.routes=(routes)
+  routes.each { |route| add_route route }
+end
+```
+
+This allows us to construct a dsl for adding routes:
+
+```ruby
+def self.get path, handler
+  add_route path: path, handler: Proc.new, method: 'GET'
+end
+
+def self.put path, handler
+  add_route path: path, handler: handler, method: 'PUT'
+end
+
+def self.post path, handler
+  add_route path: path, handler: handler, method: 'POST'
+end
+
+def self.delete path, handler
+  add_route path: path, handler: handler, method: 'DELETE'
+end
+```
+
+We can shorten this by using `define_method`:
+
+```ruby
+%w(GET PUT POST DELETE).each do |verb|
+  define_method verb.downcase.to_sym do |path, handler|
+    add_route path: path, handler: handler, method: verb
+  end
+end
+```
+
+Now we can add routes to our controller like this:
+
+```ruby
+class TasksController
+  get '/tasks', :all
+end
+```
+
+We should extract what we have done and place it into a base controller. Then can extend it from our Tasks controller or any other controller that needs routing.
+
+Our base controller looks like this:
+
+```ruby
+class BaseController
+  def self.get path, handler
+    add_route path: path, handler: Proc.new, method: 'GET'
+  end
+
+  def self.put path, handler
+    add_route path: path, handler: handler, method: 'PUT'
+  end
+
+  def self.post path, handler
+    add_route path: path, handler: handler, method: 'POST'
+  end
+
+  def self.delete path, handler
+    add_route path: path, handler: handler, method: 'DELETE'
+  end
+
+  def self.add_route(path: path, handler: handler, method: 'GET')
+    @routes[method].push {route: compile(path), handler: handler}
+  end
+
+  def self.routes
+    @routes ||= {}
+  end
+
+  def self.routes=(routes)
+    routes.each do |route|
+      add_route route
+    end
+  end
+
+  def self.compile path
+    if path.respond_to? :match
+      path
+    elsif path.respond_to? :to_str
+      postfix = '/' if path =~ /\/\z/
+      segments = path.split('/')
+      /\A#{segments.join('/')}#{postfix}\z/
+    else
+      raise TypeError, path
+    end
+  end
+
+  def find_route method, path
+    @@routes[method].each do |route|
+      return route if route.match(path)
+    end
+
+    nil
+  end
+
+  def call(env)
+    if route = find_route env['REQUEST_METHOD'], env['PATH_INFO']
+      self.send(route[:handler], env)
+    else
+      Rack::Response.new('Not found', 404)
+    end
+  end
+end
+```
+
+Then our final TasksController is:
+
+```ruby
+class TasksController < BaseController
+  get '/tasks', :all
+
+  def all(env)
+    if env['HTTP_ACCEPT'] == 'application/json'
+      [200, {"Content-Type" => "application/json"}, [Task.all().to_json]]
+    else
+      resp = '<ul>'
+      Task.all().each do |task|
+        resp << "<li>#{task.name}</li>"
+      end
+      resp << '</ul>'
+      [200, {"Content-Type" => "text/html"}, [resp]]
+    end
+  end
+end
+```
+
+<%= commit '4', 'mvc-on-rack' %>
+
+## A Quick Look at Better Views
+
+Right now we are manually rendering our html but we can do a lot better. Most of the rendering systems we use in our favorite frameworks rest on the foundations of one gem, Tilt. Tilt is a thin wrapper over almost all the templating systems we might want to use.
+
+Let's add Tilt and configure it to use slim:
+
+```ruby
+gem 'slim'
+gem 'tilt'
+```
+
+And in our BaseController file do the following:
+
+```ruby
+require 'slim'
+require 'tilt'
+```
+
+Utilizing Tilt is dead simple, we simply instantiate a new class against a filepath and Tilt will figure out which engine to process it with. Then we only need to call the render method and return it as a response body.
+
+Our render method is really simple:
+
+```ruby
+def render(path)
+  Tilt.new(path).render(self)
+end
+```
+
+<% note do %>
+
+We pass our current controller instance to Tilt's render method. This scopes the template to the controller instance and allows the views to access any of the controller's methods and properties.
+
+<% end %>
+
+Having to pass off a full path to render is a little annoying. Let's automatically append the full path:
+
+```ruby
+def render(path)
+  Tilt.new(file(path)).render(self)
+end
+
+def file(path)
+  File.join(File.expand_path(File.dirname(__FILE__)), 'app', 'views', path)
+end
+```
+
+Add these two methods to the BaseController class, then add a view called index.slim to views/tasks:
+
+```slim
+ul#task
+  - @tasks.each do |task|
+    li.task== task.name
+```
+
+Now we can change the all() method on our controller to use our new view and render method:
+
+```ruby
+  def all(env)
+    @tasks = Task.all()
+
+    if env['HTTP_ACCEPT'] == 'application/json'
+      [200, {"Content-Type" => "application/json"}, [@tasks.to_json]]
+    else
+      [200, {"Content-Type" => "text/html"}, [render('tasks/index')]]
+    end
+  end
+```
+
+<%= commit '5', 'mvc-on-rack' %>
+
+## Helpers
+
+It is common that views will need some sort of help along their way. Since our controllers are classes we can just include any helpers like we would a module. For example, if we needed a helper method for appending "cats are awesome!" to a string we could do the following:
+
+```ruby
+module TextHelpers
+  def cats_are_awesome text
+    text + " cats are awesome!"
+  end
+end
+```
+
+Then in our controller we would include this module:
+
+```ruby
+class TasksController
+  include TextHelpers
+end
+```
+
+And to use it in our views we only need to call it:
+
+```ruby
+span== cats_are_awesome "dogs are okay!"
+```
+
+<%= commit '6', 'mvc-on-rack' %>
+
+## Multiple Controllers
+
+Because our controllers are just Rack apps we can use them together just like we would well -- Rack apps. We will pass each of our controllers into Rack::Builder and have it run them together.
+
+Since our app is dedicated to weather it would be nice to have a place to get the weather's status.
+
+First let's define a spec for our new controller:
+
+```ruby
+describe WeatherController do
+  describe 'GET /weather/status' do
+    it "returns the weather's status" do
+      get '/weather/status'
+      expect(last_response.status).to eq 200
+      expect(last_response.body).to eq 'It is sunny with a slight chance of apocalypse!'
+    end
+  end
+end
+```
+
+Now create a new file called app/controllers/weather.rb:
+
+```ruby
+class WeatherController < BaseController
+  get '/status', :status
+
+  def status(env)
+    Rack::Response.new("It is sunny with a slight chance of apocalypse!", 200)
+  end
+end
+```
+
+Let's open our config.ru file and add the WeatherController:
+
+```ruby
+app = Rack::Builder.new do
+  map '/tasks' do
+    run TasksController.new
+  end
+
+  map '/weather' do
+    run WeatherController.new
+  end
+end
+```
+
+<% tip do %>
+
+You might wonder why we just cant just put full path's on our routes and instead of scoping our controllers using `map`, just run both. Like this:
+
+```ruby
+class WeatherController < BaseController
+  get '/weather/status', :status
+  # ...
+end
+
+class TasksController < BaseController
+  get '/tasks/all', :all
+  # ...
+end
+
+use TasksController.new
+run WeatherController.new
+```
+
+The problem is our first controller (TasksController) would return a 404 status when no route is found. This would end the calls and cause Rack to return a 404 to the client.
+
+If we want to mount our controllers like this we can use Rack::Cascade. Rack::Cascade takes a 404 as just a suggestion, it keeps calling Rack apps until one returns something other than 404 or it runs out of apps.
+
+We can use it like this:
+
+```ruby
+Rack::Cascade.new [TasksController.new, WeatherController.new]
+```
+
+*Note*: There is one caveat with this, Rack::Cascade doesn't like Rack::Response, which our controllers use. To get Rack::Response support you can monkey patch Rack::Cascade to call `to_a`. See: [Eldr::Cascade](https://github.com/eldr-rb/eldr/blob/master/lib/eldr/cascade.rb)
+
+<% end %>
+
+Now run our specs:
+
+```ruby
+$ bundle exec rake
+....
+```
+
+<%= commit '7', 'mvc-on-rack' %>
+
+There are lots of ways to improve on our app further. We could add better route matching, split our controllers into separate files, add response helpers, parameter parsing etc. The only problem is we would quickly find ourselves with something looking more like a ruby framework than Rack. Thankfully though, building a framework is the exact goal of this book.

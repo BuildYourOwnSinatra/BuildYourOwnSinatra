@@ -1,0 +1,26 @@
+doctype html
+html
+  head
+    meta charset="utf-8"
+    meta content="width=device-width, initial-scale=1.0" name="viewport"
+
+    meta name="Title"       content=data.book.title
+    meta name="Author"      content='K-2052'
+    meta name="Description" content='Build your own Ruby Microframework'
+
+    title==data.book.title
+    == stylesheet_link_tag 'styles'
+    script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"
+    == javascript_include_tag 'book'
+
+    link href="/images/favicon.ico" rel="shortcut icon"
+  body
+    .book
+      a.toggle-sidebar href="#toggle-sidebar" title="Table of Contents"
+      .sidebar
+        ul.toc== partial 'partials/toc'
+
+    .book-body
+      == yield
+
+    == partial '/partials/navigation'

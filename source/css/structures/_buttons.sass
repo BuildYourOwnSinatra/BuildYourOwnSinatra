@@ -1,0 +1,13 @@
+@import "colors"
+
+.button
+  padding: 8px 14px 8px 14px
+  transition: color 0.1s ease-in
+
+.button-bluegray
+  @extend .button
+  background: $bluegray
+  color: $light-gray
+
+  &:hover
+    background: shade($bluegray, 10%)

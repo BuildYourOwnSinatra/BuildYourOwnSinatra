@@ -1,0 +1,22 @@
+.note
+  background: $light-yellow
+  @include background(linear-gradient(125deg, rgba($light-yellow, 0.2) 0%, rgba($dark-yellow, 0.1) 90%))
+  padding: 1.2em
+  margin-bottom: 3em
+  font-size: 16px
+  line-height: 1.6em
+
+  .icon::before
+    float: left
+    content: ""
+    display: block
+    width: $icon-size
+    height: $icon-size
+    background: url('/images/info.svg')
+
+  .content
+    margin: 0px auto
+    max-width: 33rem
+
+    p:first-child
+      margin-top: -3px

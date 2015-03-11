@@ -1,0 +1,29 @@
+.commit
+  padding: 1.3em
+  border: 1px solid $gray
+  font-size: .8em
+  color: $gray
+
+  .icon
+    float: left
+
+  .icon::before
+    float: left
+    content: ""
+    display: block
+    width: $icon-size
+    height: $icon-size
+    background: url('/images/code.svg')
+
+  .actions
+    float: right
+
+    .clone
+      @extend .button-bluegray
+
+    a
+      text-decoration: none
+
+  .message
+    max-width: 34rem
+    margin: 2px auto

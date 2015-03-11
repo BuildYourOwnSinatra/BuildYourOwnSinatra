@@ -1,0 +1,14 @@
+doctype html
+html
+  head
+    meta charset="utf-8"
+    meta name="Title"       content=data.book.title
+    meta name="Author"      content='K-2052'
+    meta name="Description" content='Build your own Ruby Microframework'
+
+    title==data.book.title
+    == stylesheet_link_tag 'styles'
+    
+  body
+    == partial "partials/cover"
+    == yield

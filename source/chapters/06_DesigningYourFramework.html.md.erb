@@ -1,0 +1,67 @@
+---
+title: Designing Your Framework
+slug: designing-your-framework
+date: 008/01/01
+number: 6
+toc:
+  - title: Philosophy
+  - title: The API
+---
+
+# Designing Your Framework
+
+Now comes that time of the book when we get to the heart of things. We have had a long journey, passed great obstacles, crushed many bugs, fought many RegEx monsters, and trained for a long time with an old and wise Khai on a strange tiny planet so we would be ready for the challenge ahead.
+
+We have learned all we can and now it's time to face the great challenge. Perhaps we are not ready, perhaps we will fail, but if the weird alien on the heavily gravitated tiny planet taught us anything, it's that only through great challenges can we grow to be the developer we need to be. It's time to build our framework.
+
+## Philosophy
+
+With so many frameworks out there it's hard to decide what will separate ours. Throughout this book we have focused on staying as close to Rack's api as possible; this can be our starting point. We will make our framework feels as much like Rack as possible. Instead of abstracting Rack away we will evolve it.
+
+Our framework will treat Rack as a first class citizen. We wont force developers to use our framework as their app and make their controllers speak its language. Developers will be able to mix and match apps, controllers, and routers anyway they want, because they will all be the same thing: Rack apps. No structure beyond Rack will be enforced.
+
+Apps built with our framework will be modular, easy to split up, mix, match, extend, and deploy alone. Instead of building our own API to mix, match and mount an app we will use Rack's tools. Everything will be designed to work with Rack::Builder and spit out Rack::Builder stuff. When a developer wants to mount two controllers they won't have to mount them on our framework's app class they will just use Rack:
+
+```ruby
+map '/cats' do
+  CatsController
+end
+
+map '/dogs' do
+  DogsController
+end
+```
+
+We will value clarity over abstraction. Instead of pumping every use case into the framework, we will focus on making it easy to extend. Features are dangerous, with every feature added we lose a bit of clarity. We will strive to keep the framework minimal, not so we have less lines of code but so it can be understood. When you understand your framework, a missing feature doesn't matter much, you can always add it yourself.
+
+Our framework will shun convention in favor of extension. It will encourage you to build and assemble your app like you build middleware. You will build up layers of patterns and abstractions until your app emerges from the framework. Your app wont be built with a DSL it will become the DSL.
+
+Our framework will be built on patterns we already know; controllers will be Rack apps, helpers will be modules, responders will be includes. You will be able to mixin, extend, and modify the framework using the tools you have already mastered. Also HELPERS WILL BE MODULES
+
+## The API
+
+Many frameworks provide more than one way of building an app. Want your get, post etc methods in one file? Sure no problem! We will include the framework into the current scope when you require it. Now your ruby files have routes. Want to build your apps as classes? Just extend the base class!
+
+Framework developers do this to attract more types of developers. Like it this way?! You can use our framework that way too! Don't like it that way?! No problem! Uou use our framework in an entirely different way!
+
+Having more than one way to do things breeds confusion. Our framework's API will be clear. It will look like this:
+
+```ruby
+class App < Eldr::App
+  get '/', do
+    [200, {}, ['Hello World!']]
+  end
+end
+```
+
+### Routing
+
+Route compilation will be handled using [Mustermann](https://github.com/rkh/mustermann). Mustermann is advanced string matching engine we can use to compile our routes into regular expressions. Mustermann supports a wide range of route styles; Sinatra, Rails, CakePHP and more.
+
+### Responses
+
+Many frameworks abstract away responses. This makes for a short demo but makes understanding where the data for the response comes from an excercise in maze running.
+
+Our responses will be rack responses. Route handlers must conform to the rack specification and return a response code, a header hash, and a body iterator.
+
+This doesn't limit us in the long run at all. We can make use of duck typing to build all the types of responses we might want. Any responder will simply need to spit out the correct format when to_a is called.

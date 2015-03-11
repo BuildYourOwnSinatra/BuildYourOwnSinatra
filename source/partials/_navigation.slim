@@ -1,0 +1,11 @@
+.navigation
+  .prev
+    - if prev_article = current_article.previous_article
+      a rel="prev" href==prev_article.url
+        |«&nbsp;&nbsp;
+        == prev_article.title
+  .next
+    - if next_article = current_article.next_article
+      a rel="next" href=next_article.url
+        == next_article.title
+        |&nbsp;&nbsp;»

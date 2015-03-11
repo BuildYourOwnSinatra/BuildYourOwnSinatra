@@ -1,0 +1,95 @@
+---
+title: Requests
+slug: requests
+date: 004/01/01
+number: 3
+toc:
+  - title: 'Rack::Request'
+  - title: 'Sinatra::Request'
+---
+
+# Requests
+
+We all have used `params[:id]` at least once in our lives. Paremeters are the data that drive most of what we do. We find things, create things, update things and even patch things through parameters. Where do parameters come from?
+
+All request data from a client ends up in `env`. The server takes the data from an HTTP request, parses it and injects it into env; then env gets passed to everything. Frameworks take this raw env data, parse it, and wrap abstractions around it.
+
+Most of what we use is from env; and by convention, most of what is parsed is also stored in it. Storing parsed data in env is a powerful pattern, it means we can build middleware on top of it. Frameworks often build up a level of abstraction, each bit contributing a little more detail to env. Query parsers, JSON parsers, param validators, REST helpers etc, are all built on top of and into env. And it all starts with what Rack itself provides.
+
+## Rack::Request
+
+Rack::Request is Rack's basic abstraction on env. It takes env data from the server and gives us the absolute basics; parsed query strings, request method helpers, referrers, and sessions.
+
+Using Rack::Request is straightforward; we initialize it with the env object and we get back a Request object. For example, if we wanted to find out if a request was POSTed we would do:
+
+```ruby
+req = Rack::Request.new(env)
+if req.post?
+  # do stuff with req.params["data"]
+end
+```
+
+Request is "stateless" which means that any modifications we make to the request data are stored on the env object. This means we don't have to worry about keeping a copy of Request object around, we can create a new one from env and the new object will have all the data of the old one. Any stuff that comes after us in the call stack can either take advantage of the parsed data or ignore it without consequences -- powerful.
+
+<% note do %>
+
+Most ruby framework's request objects are extensions of Rack::Request. The Rail's request object and Sinatra's request object both ride on it. Sinatra's request object is almost entirely Rack::Request.
+
+<% end %>
+
+If we only store changes on env then Rack::Request becomes easy to extend. For example, if we wanted to parse the body json and turn it into params we could do:
+
+```ruby
+class Request < Rack::Request
+  def params
+    super
+    env["rack.request.query_hash"].merge! JSON.parse(body, symbolize_names: true)
+  end
+end
+```
+
+Then using it is simple:
+
+```ruby
+class App
+  def call(env)
+    @request = Request.new(env)
+
+    puts @request.params
+  end
+end
+```
+
+## Sinatra::Request
+
+You do not have to limit yourself to what you store in env. You don't have to treat it like a dumb hash, you can store any valid ruby object in it. env can be treated like a global for sharing data between Rack apps with no real side effects.
+
+
+Sinatra's request class is a simple extension of Rack::Request. It adds accept header parsing and that is it. Its instantiated and stored in env. When you access params you are actually calling `env['sinatra.request'].params`
+
+It parses acceptance headers and then (this is important) stores them on the `env` object; it adds the collection of AcceptEntry objects to `env['sinatra.accept']`.
+
+
+Let's modify our request class to extend Sinatra::Request::
+
+```ruby
+class Request < Sinatra::Request
+  def params
+    super
+    env["rack.request.query_hash"].merge! JSON.parse(body, symbolize_names: true)
+  end
+end
+```
+
+Then to call it we just do:
+
+```ruby
+require 'sinatra'
+
+get '/', do
+  @request = SinatraRequest.new(@request.env)
+  puts @request.params
+end
+```
+
+Now onto responses!

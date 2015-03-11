@@ -1,0 +1,295 @@
+---
+title: Building an App with Eldr
+slug: app
+date: 011/01/01
+bonus: true
+published: false
+toc:
+  - title: Models
+  - title: Service Objects
+  - title: Actions
+  - title: Controllers
+  - title: Finishing
+---
+
+# Building an App with Eldr
+
+Now that we have built a framework it's time to look at how we might use it in the real world. I cant think of a better example app that the app used to sell this book.
+
+First things first we need a Gemfile:
+
+```ruby
+```
+
+Now run:
+
+```sh
+$ bundle
+```
+
+<%= commit '1', 'building-the-site' %>
+
+## Models
+
+### Package
+
+Our package model is linked to a single item.
+
+```ruby
+require 'mm-sluggable'
+
+class Package
+  include MongoMapper::Document
+  plugin MongoMapper::Plugins::Sluggable
+  plugin Refile::MongoMapper::Attachment
+
+  key :price, Integer
+  key :name,  String
+
+  validates_presence_of :price
+  validates_presence_of :name
+
+  sluggable :name
+  attachment :file
+  belongs_to :purchase
+end
+```
+
+Let's add a spec for this to spec/models/package_spec.rb:
+
+```ruby
+describe Package do
+  describe '.new' do
+    it 'returns a new instance of Package' do
+      expect(Package.new).to be_instance_of Package
+    end
+  end
+
+  describe '.create' do
+    after(:each) do
+      Package.destroy_all
+    end
+
+    context 'when data is valid' do
+      it 'saves a package' do
+        package = Package.create(price: 20, name: 'name')
+        package = Package.first id: package.id
+        expect(package).to be_instance_of Package
+      end
+
+      describe 'returns a new package' do
+        subject(:package) { Package.create(price: 20, name: 'cats dogs') }
+
+        it 'has an attached file' do
+          package.file = StringIO.new("hello world")
+          expect(package.file.id).to be_instance_of String
+        end
+
+        it 'has a slug' do
+          expect(package.slug).to eq('cats-dogs')
+        end
+      end
+    end
+
+    context 'when data is invalid' do
+      it 'returns a package with errors' do
+        package = Package.create(price: 20)
+        expect(package.errors['name'].first).to eq "can't be blank"
+      end
+    end
+  end
+end
+```
+
+<%= commit '2', 'building-the-site' %>
+
+### Purchase
+
+Purchase is linked to the user and is how we determine what package a user has bought. Let's create it:
+
+```ruby
+class Purchase
+  include MongoMapper::Document
+
+  key :charge_id,   String
+  key :price,       Integer
+  key :refunded,    Boolean, default: false
+  key :refund_id,   String
+  key :upgraded,    Boolean, default: false
+  key :package_ids, Array
+
+  many :packages, in: :package_ids
+  belongs_to :user
+
+  def upgrade(upgrade_package, charge_id)
+    self.upgraded  = true
+    self.packages << upgrade_package
+    self.charge_id = charge_id
+  end
+
+  def package
+    Package.find(package_ids.last)
+  end
+
+  def upgrade!(upgrade_package, charge_id)
+    upgrade(upgrade_package, charge_id)
+    save
+  end
+
+  def refund(stripe_refund)
+    self[:refund_id] = stripe_refund.id
+    self[:refunded] = true
+  end
+
+  def refund!(stripe_refund)
+    refund(stripe_refund)
+    save
+  end
+end
+```
+
+Now a factory:
+
+```ruby
+```
+
+And a spec:
+
+```ruby
+describe Purchase do
+  describe '.new' do
+    it 'returns a new instance of Purchase' do
+      expect(Purchase.new).to be_instance_of Purchase
+    end
+  end
+
+  describe '.create' do
+    after(:each) do
+      Purchase.destroy_all
+    end
+
+    context 'when data is valid' do
+      it 'saves a purchase' do
+        purchase = FactoryGirl.create(:purchase)
+        purchase = Purchase.first id: purchase.id
+        expect(purchase).to be_instance_of Purchase
+      end
+
+      describe 'returns a new purchase' do
+        subject(:purchase) { FactoryGirl.create(:purchase_with_user_and_package) }
+
+        it 'belongs to a user' do
+          expect(purchase.user).to be_instance_of User
+        end
+
+        it 'has a package' do
+          expect(purchase.package).to be_instance_of Package
+        end
+      end
+    end
+  end
+
+
+  describe '#upgrade!' do
+    subject(:purchase) { FactoryGirl.create(:purchase_with_package) }
+    let(:package) { FactoryGirl.create(:package) }
+
+    before do
+      @original_package = purchase.package
+      purchase.upgrade! package, 'charge-id'
+    end
+
+    it 'pushes the upgraded package onto #package_ids' do
+      expect(purchase.package_ids).to include(@original_package.id)
+    end
+
+    it 'sets #upgraded= to true' do
+      expect(purchase.upgraded).to eql(true)
+    end
+
+    it 'sets #package= to the package' do
+    expect(purchase.package.id).to eql(package.id)
+    end
+
+    it 'saves #upgraded' do
+    purchase.reload
+    expect(purchase.upgraded).to eql(true)
+    end
+    end
+
+    describe '#refund!' do
+    subject(:purchase) { FactoryGirl.create(:purchase) }
+    let(:stripe_refund) { OpenStruct.new(id: 'stripeyRefund') }
+
+    before(:each) do
+    purchase.refund!(stripe_refund)
+    end
+
+    it 'sets #refunded= to true' do
+    expect(purchase.refunded).to eql(true)
+    end
+
+    it 'saves #refunded' do
+    purchase.reload
+    expect(purchase.refunded).to eql(true)
+    end
+    end
+    end
+
+```
+
+<%= commit '3', 'building-the-site' %>
+
+### User
+
+### Identity
+
+## Service Objects
+
+### Stripe
+
+#### Create Customer
+
+#### Charge
+
+#### Refun
+
+### GitHub
+
+#### Add Collaborator
+
+## Actions
+
+### Users
+
+### Creater Authorized User
+
+### Purchases
+
+#### Purchase
+
+#### Refund
+
+#### Upgrade
+
+## Controllers
+
+### Users
+
+#### Login
+
+#### OmniAuth Callback
+
+### Purchases
+
+#### Purchases
+
+#### List
+
+#### Create
+
+#### Upgrade
+
+### Refund
+
+### Main

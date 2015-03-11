@@ -1,0 +1,10 @@
+- unless @chapters
+  - @chapters = blog.articles.reverse.select { |chapter| !(chapter.data.published == false) }
+
+- @chapters.each do |chapter|
+  - chapter_class = "chapter unavailable #{chapter.data['slug']}"
+  - if preview_chapters.include? chapter.data['slug']
+    - chapter_class = "chapter available #{chapter.data['slug']}"
+  li class=chapter_class
+    h2
+      a href=chapter.url == chapter.title

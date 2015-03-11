@@ -1,0 +1,273 @@
+---
+title: Inside Rack
+slug: inside-rack
+date: 003/01/01
+number: 2
+toc:
+  - title: Hello World
+  - title: Middleware
+  - title: "Inside Rack's env"
+---
+
+# Inside Rack
+
+Rack is the interface between the Ruby frameworks we know and love and the servers we are kinda _meh_ about. Designed by some guy (Ryan Allen) eons ago (2007), Rack has made its way into practically every Ruby framework. It has even made its way to the client side through projects like [Weary]() and Faraday. As Ian McDonald once said in the prosaic film Shawnshank Mountain Jurassic Park Redemption PT 3, "Rack finds a way". He was of course referring to birds but bird analogies apply eqaully well to everything from dinosaurs to Ruby framework APIs.
+
+At its core Rack is more interface than whatever is not interface. It defines what a web app is, how to communicate with it, and then gets out of the way.
+
+Rack defines an app as an object that responds to a `call` method, takes an environment hash as a parameter, and then returns an Array with three elements:
+
+- A HTTP response code
+- A hash of headers
+- And a response body (which must be an iterator)
+
+It's up to the web server to figure out how to serve the apps and provide them with an environment of data from the client. Rack itself doesn't touch any web server stuff. This allows Rack to remain minimal and easy to support, without sacrificing flexible.
+
+Most of Rack is helper code to make it easy for servers and apps to _implement_ the spec. Rack is the formal standard and the glue that allows web servers and apps to consistently talk to each other.
+
+<% note do %>
+
+This is not strictly true, Rack itself includes about a dozen server handlers in its core. That said, most modern webservers implement their own handlers.
+
+<% end %>
+
+In the darkest timeline, each ruby server implements its own protocol; and the frameworks _only_ work with certain servers, one must pick and choose what frameworks and servers to sacrifice to the Gods of interoperability.
+
+In the darkest timeline one cannot use all things together. This is the way it has always been in the land of "No Rack" and it is the way it it always will. Also there are dragons and factions and young adult rebel chosen ones.
+
+This "darkest timeline" is also known as Python. Just kidding Python guys, I greater than sign 3 you.
+
+## Hello World
+
+The simplicity of Rack allows us to make an app in one line:
+
+```ruby
+app = Proc.new {|env| [200, {"Content-Type" => "text/html"}, ["Okay, let's charge!"]]}
+```
+
+This nifty one liner is thanks to the power of duck typing and thoughtful method naming. Proc's have a `call` method; and since this is the only method a valid Rack app needs to define, everything just works.
+
+The response we return is an array consisting of; a response status, a hash of HTTP headers, and a body iterator.
+
+The response doesn't have to be an array, it just needs to act like one, i.e respond to `to_a`. We could construct a class for our response and then format it as an array when _to_a_ is explicitly called. Rack actually provides a Rack::Response class which does _exactly_ this; we will look at it later in this chapter.
+
+<% note do %>
+
+Rack uses an iterator for the response body so the body can _be modified_ after _being sent_ to the client. This makes it possible to stream responses to the client, enabling Rack's use in real time apps. If you want to learn more checkout the Rack Streaming bonus chapter (coming soon!)
+
+<% end %>
+
+To run this app we need to pass it into a server handler. Rack provides some server handlers in its core -- we will use the one for the ruby core web server WEBrick:
+
+```ruby
+require 'rack'
+
+Rack::Handler::WEBrick.run proc {|env| [200, {"Content-Type" => "text/html"}, ["Okay, let's charge!"]]}, :Port => 9292
+```
+
+Running this file will boot up a webserver on port 9292:
+
+```ruby
+$ ruby example01_simplest_app.rb
+
+[2014-12-12 16:01:07] INFO  WEBrick 1.3.1
+[2014-12-12 16:01:07] INFO  ruby 2.1.5 (2014-11-13) [x86_64-linux]
+[2014-12-12 16:01:07] INFO  WEBrick::HTTPServer#start: pid=17875 port=9292
+localhost - - [12/Dec/2014:16:01:10 PST] "GET / HTTP/1.1" 200 19
+- -> /
+```
+
+Press <kbd>crtl</kbd> + <kbd>c</kbd> to terminate it.
+
+This pretty nifty, but in the real world we probably wouldn't want to wrap our entire app in a block.
+
+Let's rework our app example into a class:
+
+```ruby
+class App
+  def call(env)
+    ["200",{"Content-Type" => "text/plain"}, ["Wait a minute. I'm the leader! I'm the one that says when we go."]]
+  end
+end
+```
+
+Our app is just a simple Ruby class. It doesn't extend, include or require anything. All it does it provide a call method that accepts env and returns an array. This is enough for Rack to be able to communicate with it and display the response. It's that simple!
+
+We can run this just like we did our proc:
+
+```ruby
+Rack::Handler::WEBrick.run App.new
+```
+
+Booting apps like this wouldn't work well in production. We can't easily swap out for a different webserver, we cant stack apps together, and managing the server process would be next to impossible.
+
+<% note do %>
+
+We can have Rack pick the best option for a server by calling Rack::Server.start. Rack would then find the best server available and run our app through the server's corresponding handler.
+
+<% end %>
+
+Rack itself provides a tool called rackup for running our rack apps. To use rackup we create a config.ru file and then call our apps in it. We pass any apps we want to rackup's run method and then rackup will figure out the rest. Internally rackup will be creating a config script for Rack::Builder -- something we will learn about in later chapters.
+
+<% tip do %>
+
+A rackup file is a ruby file so any valid ruby will work inside it. Go crazy! (but not too crazy)
+
+<% end %>
+
+Our config.ru file looks like this:
+
+```ruby
+class App
+  def call(env)
+    ["200",{"Content-Type" => "text/plain"}, ["Wait a minute. I'm the leader! I'm the one that says when we go."]]
+  end
+end
+
+run App.new
+```
+
+To run it we execute rackup against our config.ru:
+
+```sh
+rackup example03_config.ru
+Puma 2.9.1 starting...
+* Min threads: 0, max threads: 16
+* Environment: development
+* Listening on tcp://0.0.0.0:9292
+```
+
+Press <kbd>CRTL</kbd> + <kbd>c</kbd> to exit.
+
+The simplicity of the Rack interface has one powerful side-effect, it allows for chaining Rack apps together. We can call another Rack app from within a call method and all we must do is pass it the env. Only the last call in the chain needs to return a valid response. The possibility of chaining Rack apps allows us to easily construct middleware.
+
+<% note do %>
+
+This model is so powerful that it has been ported to the client/consumer side of things; with gems like [Faraday](https://github.com/lostisland/faraday) and [Weary](https://github.com/mwunsch/weary). Checkout the bonus chapter on [Rack as a Client](/chapters/rack-as-a-client-bonus) and build your own!
+
+<% end %>
+
+
+## Middleware
+
+We can build simple middleware by manually calling the previous Rack app:
+
+```ruby
+class App
+  def call(env)
+    ["200",{"Content-Type" => "text/plain"}, ["Cats are"]]
+  end
+end
+
+class Middleware
+  def initialize(app)
+    @app = app
+  end
+
+  def call(env)
+    status, headers, body = @app.call(env)
+
+    body << " awesome"
+    [status, headers, body]
+  end
+end
+
+run Middleware.new(App.new)
+```
+
+This pattern is so common that Rack already knows how to do it. We just need to tell Rack::Builder to use our middleware class and it will hand off our App class to it.
+
+List rack apps in the order we want them called and builder will take care of the rest:
+
+```ruby
+class App
+  def call(env)
+    ["200",{"Content-Type" => "text/plain"}, ["Cats are"]]
+  end
+end
+
+class Middleware
+  def initialize(app)
+    @app = app
+  end
+
+  def call(env)
+    status, headers, body = @app.call(env)
+
+    body << " awesome"
+    [status, headers, body]
+  end
+end
+
+use Middleware
+run App.new
+```
+
+It doesn't seem like much, but this pattern can be really really powerful. Most Ruby frameworks are built on a call stack of Rack apps. The Rails dispatcher, for example, is just a Rack app. If we wanted to we could build an MVC app purely by breaking up the controllers as seperate Rack apps. Before we get to that though we need to understand a bit more about the internals of Rack.
+
+## Inside Rack's env
+
+The env var is a Rack app's window into the great wide HTTP. Most of what we use in our Ruby frameworks relies on env. Before data gets to us it's parsed by Rack and then injected into env. env holds everything from ACCEPT headers to session cookies and...
+
+<% note do %>
+
+It also has a header called `TE`, no one knows why its there, some guy just put it into the HTTP spec. No one knew who it was so no one could be asked about taking it out.
+
+<% end %>
+
+Without env the world would fall apart. Frameworks would break left and right, sessions would die, cookies would expire into oatmeal raisin, penguin suicide would sky rocket, the sky would burst into flames, and Firefly would be revived only to be canceled again after 2 episodes.
+
+Sinatra uses env mostly for streaming and caching. Rails uses it for a lot of stuff, no one knows what that stuff is, but we are assured that it is probably definitely was a good idea.
+
+All the frameworks use env for pulling data that a Rack server gets for us; HTTP headers, sessions, params, HTTP_IF tags etc.
+
+Essentially all the stuff your browser sends that a Rack server can understand, gets put into env. If we want data from our user/client we get it from env. For example, if we wanted to check that the data we received was from a POST request we could do:
+
+```ruby
+if env["REQUEST_METHOD"] == "POST"
+  # do request stuff
+end
+```
+
+This is ugly and not very ruby. It would be much better if we could do something like `if post?`. To get a nice DSL, we can wrap our env into an object; something like this:
+
+```ruby
+class Request
+  def initialize env
+    @env = env
+  end
+
+  def request_method
+    @env['REQUEST_METHOD']
+  end
+
+  def post?
+    request_method == 'POST'
+  end
+end
+```
+
+Then when we need to access the env data we can create an instance of Request:
+
+```ruby
+class App
+  def call(env)
+    request = Request.new(env)
+    if request.post?
+      ["201",{"Content-Type" => "text/plain"}, ["Posted!"]]
+    else
+      ["202",{"Content-Type" => "text/plain"}, ["Toasted!"]]
+    end
+  end
+end
+
+run App
+```
+
+Rack has anticipated this exact scenario and already provides a Rack::Request class that takes an env and then provides a bunch of convenience methods for accessing its data.
+
+<% tip do %>
+
+If we are careful to only change data directly on env, then anytime we instantiate Request we will get the exact same Request object. This sort of predictableness is very powerful and countless middleware rely on it.
+
+<% end %>

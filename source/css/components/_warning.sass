@@ -1,0 +1,9 @@
+@import "note"
+
+.warning
+  @extend .note
+  background: $light-red
+  @include background(linear-gradient(125deg, rgba($light-red, 0.2) 0%, rgba($dark-red, 0.1) 90%))
+
+  .icon::before
+    background: url('/images/warning.svg')

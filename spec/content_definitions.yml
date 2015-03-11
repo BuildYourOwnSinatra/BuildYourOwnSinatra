@@ -1,0 +1,287 @@
+has_title: true
+has_toc: false
+has_introduction: true
+has_bonus_chapters: false
+chapters:
+  rack: true
+  requests: false
+  responses: false
+  mvc: false
+  structuring: false
+  router: false
+  wrap_up: false
+bonus_chapters:
+  grape: false
+  controller_classes: false
+  rails_style: false
+  configuration: false
+  pieces: false
+  helpers: false
+  building_rack_middleware: false
+  building_rack_router: false
+  rack_streaming: false
+  formatters: false
+  securing: false
+  reversing_rack: false
+introduction:
+  has_hook: true
+  has_loop: true
+  overview: true
+  structure_outline: true
+  structured:
+    testing: true
+    what_we_will_build: true
+    github_repo_references: true
+    modular_sinatra_github_repo_reference: true
+    completed_framework_github_repo_reference: true
+hook:
+  story: true
+  burnt_tongue: true
+  reader_in_situation: true
+  reader_want_to_build_ruby_framework: true
+chapter_rack:
+  story: true
+  has_loop: true
+  has_theme: true
+  simplest:
+    hello: true
+    structure: true
+    iterator: true
+    streaming: true
+    reference_streaming: true
+    boot_manually: true
+    boot_using_rackup: true
+    chaining: true
+  middleware_works: true
+  middleware:
+    append: true
+    chains_all_the_way: true
+    chain_example: true
+    apps_and_middleware: true
+    example: true
+  plant_idea: true
+  env:
+    just_abstraction: true
+    has_requests: true
+    has_responses: true
+chapter_requests:
+  has_intro: false
+  intro:
+    just_an_object: true
+    inside_fancy: true
+  has_rack_request: false
+  rack_request:
+    env: false
+    wrapper: false
+    sinatra_and_rails_extend_rack: false
+    pop_in: false
+    extending: false
+  has_sinatra_request: false
+  sinatra_request:
+    intro: false
+    sinatra_request_gets_an_env: false
+    sinatra_request_parses_acceptance_headers: false
+  has_advanced_parameters: false
+  advanced_parameters:
+    intro: false
+    extending: false
+    params_like_activerecord: false
+    params_validations: false
+    error_handling: false
+    lead_to_responses: false
+  what_about_responses: false
+  make_reader_want_to_learn_about_responses: false
+chapter_responses:
+  has_rack_response: false
+  intro:
+    iterate: true
+    howto_class_object: true
+    inside_fancy: true
+    make_them_want_to_build_with_rack: true
+  rack_response:
+    responds_to_each: false
+    just_a_wrapper: false
+    array_access: false
+    cover_errors: false
+    errors_are_just_headers: false
+    errors_manually: false
+    calculates_length: false
+    finish_call: false
+    mention_to_ary: false
+    mention_session_handling: false
+    everything_is_a_header: false
+  has_sinatra: false
+  sinatra:
+    easier_body: false
+    helper_methods: false
+    error_handling: false
+    raw_errors: false
+  just_string_and_headers: false
+  mention_bonus: false
+  cookies_absence: false
+  raw_ruby_exceptions: false
+  quick_examples: false
+  raw_ruby_exceptions_example: false
+  make_reader_want_to_build_the_whole_thing: fals
+chapter_mvc:
+  intro: false
+  has_foundations: false
+  foundations:
+    architecture: false
+    testing: false
+    configuration: false
+  app_is_just_rack: false
+  routes_hash: false
+  controllers_just_maps: false
+  controller_base_class: false
+  all_together:
+    has_tests: false
+    app: false
+    controllers: false
+    has_views: false
+  views:
+    has_rendering: false
+    rendering:
+      raw: false
+      erb: false
+      tilt: false
+  make_reader_want_to_build_routes: false
+chapter_router:
+  just_app_call: false
+  has_simple_router: false
+  simple_router:
+    explains_core: false
+    block_route: false
+    block_route_tests: false
+    object_route: false
+    object_route_tests: false
+    parameter_parsing: false
+    make_reader_want_to_learn_about_sinatra_routing: false
+  has_sinatra: false
+  sinatra:
+    just_rack: false
+    one_big_instance: false
+    has_sinatra_cycle: false
+    cycle:
+      call: false
+      call_gets_from_instance_vars: false
+      dispatch: false
+      static: false
+      has_invoke: false
+    invoke:
+      explain: false
+      route: false
+      routes_are_blocks: false
+      filter: false
+      filters_set_instance_vars: false
+  building:
+    has_architecture: false
+    architecture:
+      rails: false
+      sinatra: false
+      rack: false
+    has_router: false
+    router:
+      priority: false
+      router: false
+      defer: false
+      has_tests: false
+    has_route: false
+    has_pattern_matching: false
+    pattern_matching:
+      priority: false
+      splats: false
+    overview: false
+    has_tests: false
+    make_reader_realize_failure_of_simple_param_parsing: false
+chapter_structure_and_philosphy:
+  has_loop: false
+  testing: false
+  packaging: false
+  has_design: false
+  design:
+    controllers: false
+    helpers: false
+    plugins: false
+    routing: false
+    racky: false
+    modular: false
+  together: false
+  make_reader_want_to_build_routes: false
+chapter_finish:
+  has_loop: false
+  has_foundations: false
+  foundations:
+    testing: false
+    reloading: false
+    rack_reload: false
+  has_request:
+  request:
+    needs: false
+    want_power_in_future: false
+    params_parser: false
+    tests: false
+  response:
+    simple_render: false
+    leave_it_to_tilt: false
+    tests: false
+  has_router: false
+  router:
+    rehash_class_vs_blocks: false
+    named_routes: false
+    conditions: false
+    conditions_kv: false
+    routes_structs: false
+    router_app: false
+    tests: false
+  has_app: false
+  big_app: false
+  mention_bonus: false
+  app_controller: false
+  app:
+    classes_vs_blocks: false
+    best_of_both: false
+    incorporating_router: false
+    incorporating_request_and_response: false
+    has_tests: false
+  has_helpers: false
+  helpers_can_be_modules: false
+  helpers_example: false
+  autoloading: false
+  review: false
+  packaging: false
+  has_tests: false
+  github_repo_reference: false
+  wat: false
+  quick_example: false
+  has_sig: false
+  github_references_repeat: false
+chapter_sinatra_review:
+  has_loop: false
+  app_class: false
+  ugly_must_be_split: false
+  separate_gems: false
+  has_foundations: false
+  foundations:
+    autoloading: false
+    testing: false
+  splitting: false
+  has_tests: false
+  reference_github: false
+  make_reader_want_something_better: false
+assets_middleware:
+  intro: false
+  more_complex_middleware:
+    loop_back_to_chaining: false
+    hooking: false
+    builder: false
+    reference_security_bonus: false
+    sprockets: false
+  has_files: false
+  files:
+    loading: false
+    to_path: false
+    busting: false
+    locating: false
+  caching: false
+  hooking: false

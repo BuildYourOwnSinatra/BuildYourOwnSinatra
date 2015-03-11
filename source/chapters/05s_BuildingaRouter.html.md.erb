@@ -1,0 +1,301 @@
+---
+title: Building a Router
+slug: building-a-router
+date: 007/01/01
+number: 5.5
+toc:
+  - title: Building a Simple Router
+  - title: Building a More Advanced Router
+---
+
+# Building a Router
+
+<% note do %>
+
+I have a confession, we will not use any of the following router in our framework. There are better more battle tested options out there. We could never build something as good as what is already out there and even if we did it would quickly fall behind the competitors. What follows is purely a learning exercise.
+
+<% end %>
+
+Routers can seem complex but at their core they are just regular expressions. All the fancy DSLs compile routes like:
+
+```ruby
+/cats/:id
+```
+
+into stuff like:
+
+```ruby
+"(?<splat>.*?)"
+```
+
+Regular expressions can seem like magic, but all they are is just sufficiently advanced strings.
+
+A router begins like most rack apps, with a call to call(). Sinatra's router is part of your app's class. When you add a router via get or another verb, the path string you passed it is turned into a regular expression. Globs become _*_, splats become captures, paths and strange characters get escaped.
+
+When rack hits Sinatra's call method, Sinatra loops through its routes and tries regexp.match against env['PATH_INFO']. When it finds a matching route it wraps it up in a Rack::Response and returns it.
+
+A router is just a rack app and your routes are just regular expressions.
+
+## Building a Simple Router
+
+We can build a simple router by skipping the compilation step and providing the compiled regex. The router will be a Rack app, when it gets called it will find a route, call that route's handler and then return the response.
+
+Let's start by creating a find route method:
+
+```ruby
+class Router
+  def find_route(env)
+    path = env['PATH_INFO']
+    route = routes.detect do |route|
+      case route.matcher
+      when String
+        path == route.matcher
+      when Regexp
+        path =~ route.matcher
+      end
+    end
+  end
+end
+```
+
+Now we need to call this find_route method and return the route's response, or a 404 error if no route is found:
+
+```ruby
+class Router
+  def call(env)
+    route = find_route(env)
+
+    if route
+      route.call(env)
+    else
+      [404, {}, ['Route Not Found']]
+    end
+  end
+end
+```
+
+We need a Route object that quacks like the one we used above. It will need a matcher attribute and a call method. The call method will need to something to hit; we can have the handler be anything that responds to call():
+
+```ruby
+class Route
+  attr_accessor :matcher, :handler
+
+  # Set attributes by key and value
+  def initialize(attrs)
+    attrs.each {|k,v| send("#{k}=",v)}
+    @handler = Proc.new if block_given?
+  end
+
+  def call(env)
+    handler.call(env)
+  end
+end
+```
+
+We need a way to add routes to our router. A common pattern when your router is an instance, is to pass it a block, then in the block you call the router's instance methods to add a new route. It looks something like:
+
+```ruby
+run Router.new do
+  get '/', { |env| Rack::Response.new("Index!") }
+end
+```
+
+This is straightforward to implement. Our initialize method will take a block and then execute it on the scope of the router's instance. We will define methods for each HTTP verb, they will take a route and then add them to @routes:
+
+```ruby
+class Router
+  attr_accessor :routes
+
+  def initialize
+    @routes = []
+
+    if block_given?
+      block = Proc.new
+      instance_eval(block)
+    end
+  end
+
+  [:delete, :get, :head, :options, :patch, :post, :put, :trace].each do |verb|
+    self.define_method verb do |path, &block|
+      routes << Route.new {matcher: path, handler: Proc.new &block }
+    end
+  end
+end
+```
+
+Our complete router class looks like this:
+
+```ruby
+class Router
+  attr_accessor :routes
+
+  def initialize
+    @routes = []
+
+    if block_given?
+      block = Proc.new
+      instance_eval(block)
+    end
+  end
+
+  [:delete, :get, :head, :options, :patch, :post, :put, :trace].each do |verb|
+    self.define_method verb do |path, &block|
+      routes << Route.new {matcher: path, handler: Proc.new &block }
+    end
+  end
+
+  def find_route(env)
+    path = env['PATH_INFO']
+    route = routes.detect do |route|
+      case route.matcher
+      when String
+        path == route.matcher
+      when Regexp
+        path =~ route.matcher
+      end
+    end
+  end
+
+  def call(env)
+    route = find_route(env)
+
+    if route
+      route.call(env)
+    else
+      [404, {}, ["Route Not Found"]]
+    end
+  end
+end
+```
+
+To use it we simply treat it like we would any Rack app:
+
+```ruby
+run Router.new do
+  get '/cats', {200, {}, ["Cats!"]}
+end
+```
+
+<%= commit '1', 'a-rack-router' %>
+
+## Building a More Advanced Router
+
+Before we build a route compiler, we should understand the basics of how Regular expressions work.
+
+Ruby's Regex library is a modified version of Oniguruma, the same library used by PHP and a few other languages. When Ruby takes a regular expression and passes it to Onigurama. Onigurama takes your Regular expression, parses it into an AST and then compiles it into machine code.
+
+The machine code for regular expressions resembles a finite state machine. A series of checks send a string to another section of code and yet another series of checks. If a check ever fails the string is sent back to the start of the code again. If you have ever built a parser then you understand how regular expression work.
+
+We can turn a path string into a regular expression without much effort.
+
+First, we need to split `/` into segments:
+
+```ruby
+def compile(path)
+  postfix = '/' if path =~ /\/\z/
+  segments = path.split('/')
+  /\A#{segments.join('/')}#{postfix}\z/
+end
+```
+
+This will allow us to turn paths like `/cats/all` into a regular expression. Since we don't strip our segments we can include valid regex between our slashes and it will just work (it pays to not get too clever). If we wanted to match paths with a :id we could just make our path like this:
+
+```ruby
+get '/cats/(?<id>.)', { [200, {}, ["Caught the cat!"]] }
+```
+
+<% note do %>
+
+This Regexp uses [named captures](http://www.ruby-doc.org/core-1.9.3/Regexp.html#method-i-named_captures). A feature introduced in Ruby 1.9.2
+
+<% end %>
+
+Let's modify our previous router to use compile. We will add the compile method to the Route class:
+
+```ruby
+class Route
+  attr_accessor :matcher, :handler
+
+  # Set attributes by key and value
+  def initialize(attrs)
+    attrs.each {|k,v| send("#{k}=",v)}
+    @handler = Proc.new if block_given?
+    @matcher = compile(matcher)
+  end
+
+  def compile(path)
+    postfix = '/' if path =~ /\/\z/
+    segments = path.split('/')
+    /\A#{segments.join('/')}#{postfix}\z/
+  end
+
+  def call(env)
+    handler.call(env)
+  end
+end
+```
+
+It would be nice to turn captures into params. We can do this by passing the captures from a match into `call()`:
+
+```ruby
+class Router
+  def find_route(env)
+    path = env['PATH_INFO']
+    match_data = nil
+    route = routes.detect do |route|
+      match_data = route.matcher.match(path)
+    end
+
+    route, Hash[match_data.names.zip(match_data.captures)]
+  end
+
+  def call(env)
+    route, params = find_route(env)
+
+    if route
+      route.call(env, params)
+    else
+      [404, {}, ["Route Not Found"]]
+    end
+  end
+end
+```
+
+Then in our Route we pass off the params to the route's handler:
+
+```ruby
+def call(env, params={})
+  handler.call(env, params)
+end
+```
+
+Now we can use it like this:
+
+```ruby
+get '/cats/(?<id>.)', { |env, params| [200, {}, ["Caught the cat! #{params['id']}"]] }
+```
+
+Ideally we want our compiler to generate this regex for us from a simpler syntax, something like `get '/cats/:id'`. To do this we just have to include a little regex in our compiler:
+
+```ruby
+def compile(path)
+  postfix = '/' if path =~ /\/\z/
+  segments = path.split('/')
+
+  segments.each do |segment|
+    segment.gsub!(/((:\w+)|\*)/) do |match|
+      match == "*" ? "(?<splat>.*?)" : "(?<#{$2[1..-1]}>[^/?#]+#{?? unless greedy})"
+    end
+  end
+
+  /\A#{segments.join('/')}#{postfix}\z/
+end
+```
+
+This will allow us to ultize splats in our routes:
+
+```ruby
+get '/cats/:id', { |env, params| [200, {}, ["Caught the cat! #{params['id']}"]] }
+```
+
+I have intentionally left out a lot of the ugly parts of url pattern matching. What we have built would get us 90% of the way but the other 10% is real a headache. Lots of things are valid urls and a big part of  router's job is taking a valid url and condensing it into just the stuff that matters. Turning stuff like /cA tsåå%%%/*.html/ into `/cats/(?<id>.)` and not blowing everything up in the process. Routes are hard.

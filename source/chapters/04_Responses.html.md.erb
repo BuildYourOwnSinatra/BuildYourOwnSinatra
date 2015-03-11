@@ -1,0 +1,112 @@
+---
+title: Responses
+slug: responses
+date: 005/01/01
+number: 4
+toc:
+  - title: 'Rack::Response'
+---
+
+# Responses
+
+The existence of Rack::Response is an enigma. After all, aren't our responses just an array? What good would a wrapper object do when we have to return an array? The secret is that we only have to return something that acts like an array. If we provide a `to_a` method we can return an object instead of an array.
+
+We can construct a valid response class like this:
+
+```ruby
+class Response
+  def initialize status, headers, body
+    @status, @headers, @body = status, headers, body
+  end
+
+  def to_a
+    [@status, @headers, @body]
+  end
+end
+```
+
+Then use it like this:
+
+```ruby
+class App
+  def call(env)
+    Response.new("200", {"Content-Type" => "text/plain"}, ["Wait a minute. I'm the leader!."])
+  end
+end
+
+run App.new
+```
+
+## Rack::Response
+
+Rack::Response takes advantage of this pattern to provide response helpers. It has helpers for; setting status codes, setting headers, and writing to the body.
+
+<% note do %>
+
+The most useful powerful thing Rack::Response does is wrap the body in a proxy object, which means we can listen to it for writes. If we listen to the body for writes, we can update the response live -- very useful for streaming.
+
+<% end %>
+
+We can set status codes using the status accessor:
+
+```ruby
+@response = Rack::Response.new("Cat Created!")
+@respsonse.status == 201
+@response
+```
+
+And we can write to the body using an accessor:
+
+```ruby
+@response = Rack::Response.new
+@respsonse.body << "Cat Created!"
+@response
+```
+
+However, this is not the best way to write to the body. The client expects our response to have data about the size of the body. Without a Content-Length header clients tend to throw a fit.
+
+We can manually set the Content-Length header:
+
+```ruby
+@response = Rack::Response.new
+body = "Cat Created!"
+@respsonse.body << body
+@response['Content-Length'] = body.length
+```
+
+The easiest way to write to the body is through the write method. `write()` will figure out the size of the string, calculate the Content-Length for us, and then set the header:
+
+```ruby
+@response = Rack::Response.new
+@respsonse.write 'Cat Created!'
+```
+
+We can set any response header through the request instance by using `[]=`:
+
+```ruby
+@response = Rack::Response.new('Go on!', 302)
+@response['Location'] = '/cats'
+@response
+```
+
+Rack::Request also helps us set cookies:
+
+```ruby
+@response = Rack::Response.new('Wow!')
+@response.set_cookie 'cats', 'cats are great!'
+@response
+```
+
+This hides a secret, Cookies are just headers and we could do the same thing with:
+
+```ruby
+@response = Rack::Response.new('Wow!')
+@response['Set-Cookie'] = 'Properly Formatted Coookie Here'
+@response
+```
+
+Chances are though that we would have formatted our cookie improperly; most of us have no idea how a cookie looks, have heard of RFC 822 or even know what RFC is. set_cookie makes everything look and feel like a hash -- and we work with hashes everyday. The real world is a mess, thank your Rack you don't have to deal with it.
+
+It is good to remember that everything in our response is just headers. When we hit those fancy methods they are just making it easier to set headers. Take `redirect` for example, it simply sets a 302 status code and a location header. All of it, just headers.
+
+At their core requests and responses are both merely wrapper objects. They give us a nice API to work with instead of forcing us to manipulate things manually. They are easy to extend and build upon just like Rack apps themselves. If we wanted to we could easily use these simple patterns to construct an entire MVC web application.

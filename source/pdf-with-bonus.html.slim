@@ -1,0 +1,6 @@
+- @chapters = blog.articles.reverse.select { |chapter| !(chapter.data.published == false) }
+
+.book
+  .book-body
+    - @chapters.each do |chapter|
+      == partial 'partials/chapter', locals: { chapter: chapter }

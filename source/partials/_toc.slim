@@ -1,0 +1,14 @@
+- unless @chapters
+  - @chapters = blog.articles.reverse.select { |chapter| !(chapter.data.published == false) }
+
+- @chapters.each do |chapter|
+  - chapter_class = 'chapter available'
+  li class=chapter_class
+    a href=chapter.url
+      span.number == chapter.data['number']
+      span.title  == chapter.title
+    - if sections = chapter.data['toc']
+      ul.sections
+        - sections.each do |section|
+          li.section
+              a href="#{chapter.url}##{section['title'].downcase.parameterize}"== section['title']
