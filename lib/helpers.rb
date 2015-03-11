@@ -17,6 +17,8 @@ module Helpers
   end
 
   def commit(sha, github_path, message='Commit Link')
+    return ''
+    
     user_and_repo = github_path.split('/')
 
     if user_and_repo.count == 2
