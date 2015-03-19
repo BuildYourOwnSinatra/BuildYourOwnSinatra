@@ -2,8 +2,7 @@
 
 .tip
   @extend .note
-  background: $light-blue
-  @include background(linear-gradient(125deg, rgba($light-blue, 0.2) 0%, rgba($dark-blue, 0.1) 90%))
+  @include background-image(linear-gradient(125deg, rgba($light-blue, 0.2) 0%, rgba($dark-blue, 0.1) 90%))
 
   .icon::before
     background: url('/images/light-bulb.svg')

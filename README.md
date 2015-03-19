@@ -50,6 +50,22 @@ Mobi:
 $ bundle exec rake build:mobi
 ```
 
+## Live Coding
+
+The CSS is specifically adapted to be live edited using [Takana](https://github.com/mechio/takana). This comes with some drawbacks; 1. We have only use libsass features and 2. Sprocket asset paths cant be shared.
+
+First install a compatible version of bourbon:
+
+```sh
+gem install bourbon -v 3.2.4
+```
+
+Then when booting takana, pass the path for the bourbon's sass to it:
+
+```sh
+takana . -i ~/.rbenv/versions/2.1.5/lib/ruby/gems/2.1.0/gems/bourbon-3.2.4/dist
+```
+
 ## Help/Resources
 
 You can get help from the following places:

@@ -3,7 +3,8 @@ Slim::Engine.set_options pretty: true, sort_attrs: false
 
 require_relative 'lib/helpers'
 
-ENV['GITHUB_USER'] ||= 'BuilYourOwnSinatra'
+ENV['RACK_ENV']         ||= 'development'
+ENV['GITHUB_USER']      ||= 'BuilYourOwnSinatra'
 ENV['PREVIEW_CHAPTERS'] ||= 'introduction setting-up-a-development-environment rack designing-your-framework paterrns-with-your-framework'
 
 ## Index
@@ -34,6 +35,10 @@ activate :relative_assets
 activate :blog do |blog|
   blog.sources   = 'chapters/:title.html'
   blog.permalink = 'chapters/:slug.html'
+end
+
+configure :development do
+  ENV['RACK_ENV'] ||= 'development'
 end
 
 configure :build do

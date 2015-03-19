@@ -11,7 +11,14 @@ html
     title==data.book.title
     == stylesheet_link_tag 'styles'
     script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"
-
+    - if ENV['RACK_ENV'] == 'development'
+      |
+        <script type="text/javascript" src="http://localhost:48626/takana.js"></script>
+        <script type="text/javascript">
+          takanaClient.run({
+            host: 'localhost:48626' // optional, defaults to localhost:48626
+          });
+        </script>
     link href="/images/favicon.ico" rel="shortcut icon"
   body
     == yield
