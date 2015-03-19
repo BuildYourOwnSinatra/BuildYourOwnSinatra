@@ -1,5 +1,4 @@
-.note
-  @include background-image(linear-gradient(125deg, rgba($light-yellow, 0.2) 0%, rgba($dark-yellow, 0.1) 90%))
+.note-block
   padding: 1.2em
   margin-bottom: 3em
   font-size: 16px
@@ -11,11 +10,17 @@
     display: block
     width: $icon-size
     height: $icon-size
-    background: url('/images/info.svg')
 
   .content
     margin: 0px auto
     width: 84%
 
     p:first-child
-      margin-top: -3px
+      margin-top: 0
+
+.note
+  @extend .note-block
+  @include background-image(linear-gradient(125deg, rgba($light-yellow, 0.2) 0%, rgba($dark-yellow, 0.1) 90%))
+
+  .icon::before
+    background: url('/images/info.svg')
