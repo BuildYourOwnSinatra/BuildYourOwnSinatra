@@ -1,5 +1,2 @@
-- [ ] go over code
-- [ ] finish index and full design
-- [ ] finish upgrade page design
 - [ ] figure out why middleman takes so long to build
 - [ ] add refund to sidebar
