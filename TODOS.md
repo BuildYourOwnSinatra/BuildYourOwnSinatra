@@ -1,2 +1,4 @@
 - [ ] figure out why middleman takes so long to build
+- [ ] add download link
 - [ ] add refund to sidebar
+- [ ] for now allow any user that bought the book to access all chapters
