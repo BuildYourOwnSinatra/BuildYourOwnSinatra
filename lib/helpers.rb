@@ -16,15 +16,13 @@ module Helpers
     concat partial 'partials/warning', locals: { warning: warning }
   end
 
-  def commit(sha, github_path, message='Commit Link')
-    return ''
-
+  def commit(github_path, sha, message='Commit Link')
     user_and_repo = github_path.split('/')
 
     if user_and_repo.count == 2
       user, repo = user_and_repo
     else
-      user, repo = 'BuildYourOwnSinatra', github_path
+      user, repo = ENV['GITHUB_USER'], github_path
     end
 
     github = Github.new
@@ -36,12 +34,21 @@ module Helpers
       # do nothing
     end
 
-    url  = "https://github.com/#{ENV['GITHUB_USER']}/#{repo}/commit/#{sha}"
+    url  = "https://github.com/#{user}/#{repo}/commit/#{sha}"
     partial 'partials/commit', locals: { message: message, sha: sha, repo: repo, url: url }
   end
 
-  def gh_branch(repo, branch, message = 'Checkout the Current State on GitHub')
-    partial 'partials/gh_branch', locals: { message: message, repo: repo, branch: branch }
+  def gh_branch(github_path, branch, message = 'Checkout the Current State on GitHub')
+    user_and_repo = github_path.split('/')
+
+    if user_and_repo.count == 2
+      user, repo = user_and_repo
+    else
+      user, repo = ENV['GITHUB_USER'], github_path
+    end
+
+    url  = "https://github.com/#{user}/#{repo}/tree/#{branch}"
+    partial 'partials/gh_branch', locals: { message: message, repo: repo, url: url, branch: branch }
   end
 
   def preview_chapters
