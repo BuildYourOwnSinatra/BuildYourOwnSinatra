@@ -48,7 +48,7 @@ $ git config --global user.name "YOUR NAME"
 $ git config --global user.email "YOUR@EMAIL.com"
 ```
 
-Now comes the hard part where you are likely to screw something up; configuring SSH with GitHub:
+Now comes the hard part where you are likely to screw something up; _configuring SSH with GitHub_:
 
 <% tip do %>
 
@@ -74,7 +74,9 @@ If you see keys already there then figure out what those keys are before you pro
 
 <% end %>
 
-After some prompts you will have a new key; add it to ssh-agent:
+After some prompts you will have a new key.
+
+Add the key to ssh-agent:
 
 ```sh
 # start the ssh-agent
@@ -90,7 +92,7 @@ Then you will need to add it to your GitHub account. You can quickly copy it to 
 $ pbcopy < ~/.ssh/id_rsa.pub
 ```
 
-Once you have done that check that its working by running:
+Check that things are working by running:
 
 ```sh
 $ ssh -T git@github.com
@@ -98,15 +100,10 @@ $ ssh -T git@github.com
 
 ### Installing Ruby
 
-To install and manage ruby we will be using rbenv.
+To install and manage ruby we will be using [rbenv](https://github.com/sstephenson/rbenv)
 
 Install it using brew:
-
-```sh
-$ brew install rbenv
-```
-
-Then add rbenv's path to PATH:
+``to start it.
 
 ```sh
 $ echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bash_profile
@@ -143,10 +140,9 @@ alias rethinkdb.stop='launchctl unload /usr/local/opt/rethinkdb/homebrew.mxcl.re
 ```
 
 Run `$ source ~/.bash_profile` to update the shell environment.
+Run `$ rethinkdb.start` to start it.
 
-Run `$ rethinkdb.start` and then visit [http://localhost:8080](http://localhost:8080)
-
-If you want RethinkDB to start at boot you can do the following:
+If you want RethinkDB to start on boot you can do the following:
 
 ```sh
 $ ln -sfv /usr/local/opt/rethinkdb/*.plist ~/Library/LaunchAgents
@@ -154,7 +150,7 @@ $ ln -sfv /usr/local/opt/rethinkdb/*.plist ~/Library/LaunchAgents
 
 ## On Ubuntu
 
-First we have to install the dependencies:
+First install the dependencies:
 
 ```sh
 $ sudo apt-get update
@@ -177,7 +173,7 @@ $ git config --global user.name "YOUR NAME"
 $ git config --global user.email "YOUR@EMAIL.com"
 ```
 
-Now comes the hard part where you are likely to screw something up; configuring SSH with GitHub:
+Now comes the hard part where you are likely to screw something up; _configuring SSH with GitHub_:
 
 <% tip do %>
 
@@ -203,7 +199,9 @@ If you see keys already there then figure out what those keys are before you pro
 
 <% end %>
 
-After some prompts you will have a new key; add it to ssh-agent:
+After some prompts you will have a new key.
+
+Add it to ssh-agent:
 
 ```sh
 # start the ssh-agent
@@ -213,7 +211,7 @@ $ eval "$(ssh-agent -s)"
 $ ssh-add ~/.ssh/id_rsa
 ```
 
-Then will need to add it to your GitHub. You can quickly copy it by using xclipe:
+Then will need to add it to your GitHub. You can quickly copy it by using xclip:
 
 ```sh
 $ sudo apt-get install xclip
@@ -222,7 +220,7 @@ $ sudo apt-get install xclip
 $ xclip -sel clip < ~/.ssh/id_rsa.pub
 ```
 
-Once you have done that check that it is working by running:
+Check that things are working by running:
 
 ```sh
 $ ssh -T git@github.com
@@ -230,7 +228,7 @@ $ ssh -T git@github.com
 
 ### Installing Ruby
 
-Install rbenv by cloning it:
+Install [rbenv](https://github.com/sstephenson/rbenv) by cloning it:
 
 ```sh
 $ cd
@@ -266,7 +264,7 @@ The master branch is always working (yeah rational branching!) so you don't have
 
 <% end %>
 
-Then set our ruby version to 2.1.5:
+Set the ruby version to 2.1.5:
 
 ```sh
 $ rbenv install 2.1.5
@@ -349,7 +347,7 @@ Be sure to run `$ rbenv rehash` after.
 
 <% end %>
 
-When there is a spec and it's not clear where to put it, drop it in a folder named _spec_. You can then run rspec against the specs directly:
+When there is a spec and it's not clear where to put it, drop it in a folder named _spec_. You can then run rspec against the spec folder directly:
 
 ```sh
 $ rspec
@@ -357,9 +355,9 @@ $ rspec
 
 ## Deployment
 
-Deployment tools are often complicated and messy. They abstract our apps behind countless layers abstraction and leave us with no real idea how the fuck they work. Most of this abstraction is there to solve problems 99% of us will never have. Most of the problems we end up having are with the abstractions.
+Deployment tools are often complicated and messy. They abstract our apps behind countless layers of abstraction and leave us with no real idea how they work. Most of this abstraction is there to solve problems 99% of us will never have. Most of the problems end up having are caused by abstractions meant to solve problems 99% of us will never have.
 
-We will keep our tools simple and straightforward. For configuring/booting our apps we will use Rackup. Managing our app's processes will be done with a Procfile. To deploy our apps we will use heroku buildpacks. App settings will be stored in ENV. Locally we will manage processes and our env using [foreman](https://github.com/ddollar/foreman).
+We will keep our tools simple and straightforward. For configuring/booting our apps we will use Rackup. Managing our app's processes will be done with a Procfile. To deploy our apps we will use heroku buildpacks. App settings will be stored in an ENV. Locally we will manage processes and our env using [foreman](https://github.com/ddollar/foreman).
 
 <% note do %>
 
@@ -382,7 +380,7 @@ production:
     url: ""
 ```
 
-When you adopt the constraint of env vars you realize that this multiline yaml configuration can be accomplished with a single uri string. So instead of initializing your database with three or four lines you just pass in one:
+When you adopt the constraint of env vars you realize that this multiline yaml configuration could be done with a single uri string. Instead of initializing your database with three or four lines you just pass in one:
 
 ```ruby
 client = MongoClient.from_uri(ENV['MONGO_URI'])
