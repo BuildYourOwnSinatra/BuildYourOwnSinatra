@@ -18,7 +18,7 @@ module Helpers
 
   def commit(sha, github_path, message='Commit Link')
     return ''
-    
+
     user_and_repo = github_path.split('/')
 
     if user_and_repo.count == 2
@@ -38,6 +38,10 @@ module Helpers
 
     url  = "https://github.com/#{ENV['GITHUB_USER']}/#{repo}/commit/#{sha}"
     partial 'partials/commit', locals: { message: message, sha: sha, repo: repo, url: url }
+  end
+
+  def gh_branch(repo, branch, message = 'Checkout the Current State on GitHub')
+    partial 'partials/gh_branch', locals: { message: message, repo: repo, branch: branch }
   end
 
   def preview_chapters
