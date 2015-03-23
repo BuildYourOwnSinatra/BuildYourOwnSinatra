@@ -4,7 +4,7 @@ Slim::Engine.set_options pretty: true, sort_attrs: false
 require_relative 'lib/helpers'
 
 ENV['RACK_ENV']         ||= 'development'
-ENV['GITHUB_USER']      ||= 'BuilYourOwnSinatra'
+ENV['GITHUB_USER']      ||= 'BuildYourOwnSinatra'
 ENV['PREVIEW_CHAPTERS'] ||= 'introduction setting-up-a-development-environment rack designing-your-framework paterrns-with-your-framework'
 
 ## Index
