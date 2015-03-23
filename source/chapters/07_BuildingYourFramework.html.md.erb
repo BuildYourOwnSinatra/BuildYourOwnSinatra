@@ -119,7 +119,7 @@ $ bundle exec rspec
 
 If nothing explodes then we are good to go!
 
-<%= commit '1', 'building-eldr' %>
+<%= gh_branch 'building-eldr', 'step-1' %>
 
 ## Basic Architecture
 
@@ -169,7 +169,7 @@ This might seem like it would have a perfomance hit but dup is rather efficient;
 
 <% end %>
 
-<%= commit '2', 'building-eldr' %>
+<%= gh_branch 'building-eldr', 'step-2' %>
 
 Rack can interface with this app class but what we really want is for our app class to be a Rack interface. We want to be able to add middleware, mix other apps into our app, inherit from other apps etc. We can get all this by turning our app class into a Rack::Builder stack.
 
@@ -441,7 +441,7 @@ end
 
 That does it for our stack!
 
-<%= commit '3', 'building-eldr' %>
+<%= gh_branch 'building-eldr', 'step-3' %>
 
 ## Routing
 
@@ -513,7 +513,7 @@ describe Eldr::Matcher do
 end
 ```
 
-<%= commit '4', 'building-eldr' %>
+<%= gh_branch 'building-eldr', 'step-4' %>
 
 ### Route
 
@@ -567,7 +567,7 @@ describe Eldr::Route do
 end
 ```
 
-<%= commit '5', 'building-eldr' %>
+<%= gh_branch 'building-eldr', 'step-5' %>
 
 ### Recognizing
 
@@ -655,7 +655,7 @@ describe Eldr::Recognizer do
 end
 ```
 
-<%= commit '6', 'building-eldr' %>
+<%= gh_branch 'building-eldr', 'step-6' %>
 
 ## Route Handling
 
@@ -739,7 +739,7 @@ describe Eldr::Route do
 end
 ```
 
-<%= commit '8', 'building-eldr' %>
+<%= gh_branch 'building-eldr', 'step-8' %>
 
 ## Putting it Together
 
@@ -820,7 +820,7 @@ class App < Eldr::App
 end
 ```
 
-<%= commit '9', 'building-eldr' %>
+<%= gh_branch 'building-eldr', 'step-9' %>
 
 ## Filters
 
@@ -1023,7 +1023,7 @@ Now modify our app spec (spec/app_spec.rb) to make sure are before/after methods
   end
 ```
 
-<%= commit '10', 'building-eldr' %>
+<%= gh_branch 'building-eldr', 'step-10' %>
 
 ## Instance Variables
 
@@ -1087,7 +1087,7 @@ class Route
 end
 ```
 
-<%= commit '11', 'building-eldr' %>
+<%= gh_branch 'building-eldr', 'step-11' %>
 
 ## Configuration
 
@@ -1205,7 +1205,7 @@ Now let's add some spec to make sure all is working:
 ```ruby
 ```
 
-<%= commit '12', 'building-eldr' %>
+<%= gh_branch 'building-eldr', 'step-12' %>
 
 ## The Final Class
 
@@ -1216,4 +1216,4 @@ We still have a couple things to add. A configuration accessor, some helper acce
 
 Congratulations you have built your framework! But what about helpers?!
 
-<%= commit '13', 'building-eldr' %>
+<%= gh_branch 'building-eldr', 'step-13' %>

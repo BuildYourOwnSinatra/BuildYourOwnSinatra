@@ -146,7 +146,7 @@ $ bundle exec rake
 0 examples, 0 failures
 ```
 
-<%= commit '1', 'mvc-on-rack' %>
+<%= gh_branch 'mvc-on-rack', 'step-1' %>
 
 ## Models
 
@@ -228,7 +228,7 @@ Finished in 0.00097 seconds (files took 0.11474 seconds to load)
 
 They are passing! That does it for our models!
 
-<%= commit '2', 'mvc-on-rack' %>
+<%= gh_branch 'mvc-on-rack', 'step-2' %>
 
 ## Tasks Controller
 
@@ -333,7 +333,7 @@ $ bundle exec spec
 ....
 ```
 
-<%= commit '3', 'mvc-on-rack' %>
+<%= gh_branch 'mvc-on-rack', 'step-3' %>
 
 ## A Better Controller
 
@@ -627,7 +627,7 @@ class TasksController < BaseController
 end
 ```
 
-<%= commit '4', 'mvc-on-rack' %>
+<%= gh_branch 'mvc-on-rack', 'step-4' %>
 
 ## A Quick Look at Better Views
 
@@ -697,7 +697,7 @@ Now we can change the all() method on our controller to use our new view and ren
   end
 ```
 
-<%= commit '5', 'mvc-on-rack' %>
+<%= gh_branch 'mvc-on-rack', 'step-5' %>
 
 ## Helpers
 
@@ -725,7 +725,7 @@ And to use it in our views we only need to call it:
 span== cats_are_awesome "dogs are okay!"
 ```
 
-<%= commit '6', 'mvc-on-rack' %>
+<%= gh_branch 'mvc-on-rack', 'step-6' %>
 
 ## Multiple Controllers
 
@@ -813,6 +813,6 @@ $ bundle exec rake
 ....
 ```
 
-<%= commit '7', 'mvc-on-rack' %>
+<%= gh_branch 'mvc-on-rack', 'step-7' %>
 
 There are lots of ways to improve on our app further. We could add better route matching, split our controllers into separate files, add response helpers, parameter parsing etc. The only problem is we would quickly find ourselves with something looking more like a ruby framework than Rack. Thankfully though, building a framework is the exact goal of this book.
