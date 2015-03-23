@@ -11,29 +11,29 @@ toc:
 
 # Inside Rack
 
-Rack is the interface between the Ruby frameworks we know and love and the servers we are kinda _meh_ about. Designed by some guy (Ryan Allen) eons ago (2007), Rack has made its way into practically every Ruby framework. It has even made its way to the client side through projects like [Weary]() and Faraday. As Ian McDonald once said in the prosaic film Shawnshank Mountain Jurassic Park Redemption PT 3, "Rack finds a way". He was of course referring to birds but bird analogies apply eqaully well to everything from dinosaurs to Ruby framework APIs.
+Rack is the interface between the Ruby frameworks we know and love and the servers we are kinda _meh_ about. Designed by some guy (Ryan Allen) eons ago (2007), Rack has made its way into practically every Ruby framework. It has even made its way to the client side through projects like [Weary](https://github.com/mwunsch/weary) and [Faraday](https://github.com/lostisland/faraday).
 
-At its core Rack is more interface than whatever is not interface. It defines what a web app is, how to communicate with it, and then gets out of the way.
+As Ian MalCombs once said in the prosaic film Shawnshank Mountain Jurassic Park Revenge of River Tornadao Redemption PT 3, _"Rack finds a way"_. He was of course referring to ancient birds but bird analogies apply equally well to everything from dinosaurs to Ruby framework APIs.
 
-Rack defines an app as an object that responds to a `call` method, takes an environment hash as a parameter, and then returns an Array with three elements:
+At its core Rack is mostly interface. It defines what a web app is, how to communicate with it, and then gets out of the way. Rack defines an app as an object that responds to a `call` method, takes an environment hash as a parameter, and then returns an Array with three elements:
 
 - A HTTP response code
 - A hash of headers
 - And a response body (which must be an iterator)
 
-It's up to the web server to figure out how to serve the apps and provide them with an environment of data from the client. Rack itself doesn't touch any web server stuff. This allows Rack to remain minimal and easy to support, without sacrificing flexible.
-
-Most of Rack is helper code to make it easy for servers and apps to _implement_ the spec. Rack is the formal standard and the glue that allows web servers and apps to consistently talk to each other.
+It's up to the web server to figure out how to serve rack apps and provide them with an environment of data from the client. Rack itself doesn't touch any web server stuff \* . This allows Rack to remain minimal and easy to support, without sacrificing flexibility.
 
 <% note do %>
 
-This is not strictly true, Rack itself includes about a dozen server handlers in its core. That said, most modern webservers implement their own handlers.
+\* This is not strictly true; ideally servers would implement their own Rack handlers but many do not, so Rack actually includes many server handlers in its core. But this is a ruby book, we can sacrifice truth for narrative and clarity.
 
 <% end %>
 
-In the darkest timeline, each ruby server implements its own protocol; and the frameworks _only_ work with certain servers, one must pick and choose what frameworks and servers to sacrifice to the Gods of interoperability.
+Most of Rack is helper code to make it easy for servers and apps to _implement_ the spec. Rack is the formal standard and the glue that allows web servers and apps to consistently talk to each other.
 
-In the darkest timeline one cannot use all things together. This is the way it has always been in the land of "No Rack" and it is the way it it always will. Also there are dragons and factions and young adult rebel chosen ones.
+In the darkest timeline, each ruby server implements its own protocol; and the frameworks _only_ work with certain servers. When creating an app one would have to pick and choose what frameworks and servers to sacrifice to the Gods of interoperability.
+
+In the darkest timeline one cannot use all things together. This is the way it has always been and it is the way it it always will be. Also there are dragons and factions and young adult rebel chosen ones.
 
 This "darkest timeline" is also known as Python. Just kidding Python guys, I greater than sign 3 you.
 
@@ -99,7 +99,7 @@ We can run this just like we did our proc:
 Rack::Handler::WEBrick.run App.new
 ```
 
-Booting apps like this wouldn't work well in production. We can't easily swap out for a different webserver, we cant stack apps together, and managing the server process would be next to impossible.
+Booting apps like this wouldn't work well in production. We can't easily swap out for a different webserver, we cant stack apps together, and managing the server process would be a pain.
 
 <% note do %>
 
@@ -143,7 +143,7 @@ The simplicity of the Rack interface has one powerful side-effect, it allows for
 
 <% note do %>
 
-This model is so powerful that it has been ported to the client/consumer side of things; with gems like [Faraday](https://github.com/lostisland/faraday) and [Weary](https://github.com/mwunsch/weary). Checkout the bonus chapter on [Rack as a Client](/chapters/rack-as-a-client-bonus) and build your own!
+This model is so powerful that it has been ported to the client/consumer side of things; with gems like [Faraday](https://github.com/lostisland/faraday) and [Weary](https://github.com/mwunsch/weary). Checkout the bonus chapter on [Rack as a Client](/chapters/rack-as-a-client-bonus) (coming soon!) and build your own!
 
 <% end %>
 
@@ -207,7 +207,7 @@ It doesn't seem like much, but this pattern can be really really powerful. Most 
 
 ## Inside Rack's env
 
-The env var is a Rack app's window into the great wide HTTP. Most of what we use in our Ruby frameworks relies on env. Before data gets to us it's parsed by Rack and then injected into env. env holds everything from ACCEPT headers to session cookies and...
+The env var is a Rack app's window into the great wide HTTP. Most of what we use in our Ruby frameworks relies on env. Before data gets to us it's parsed by Rack and then injected into env. env holds everything from ACCEPT headers to session cookies.
 
 <% note do %>
 
