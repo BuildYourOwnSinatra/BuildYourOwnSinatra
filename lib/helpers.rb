@@ -38,7 +38,7 @@ module Helpers
     partial 'partials/commit', locals: { message: message, sha: sha, repo: repo, url: url }
   end
 
-  def gh_branch(github_path, branch, message = 'Checkout the Current State on GitHub')
+  def gh_branch(github_path, branch, message = 'Checkout Current Step')
     user_and_repo = github_path.split('/')
 
     if user_and_repo.count == 2

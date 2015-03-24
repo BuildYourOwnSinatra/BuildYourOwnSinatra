@@ -4,6 +4,8 @@
   font-size: .8em
   color: $gray
   margin-top: 1.2em
+  display: flex
+  overflow: auto
 
   .icon
     float: left
@@ -22,10 +24,21 @@
 
     .clone
       @extend .button-bluegray
+      color: $light-gray !important
+
+    .clone:visited
+      color: $light-gray !important
 
     a
       text-decoration: none
 
+    a:visited
+      color: $light-gray !important
+
+    a span
+      color: $light-gray !important
+
   .message
-    max-width: 34rem
-    margin: 2px auto
+    float: left
+    max-width: 24rem
+    margin: 2px auto 0px 0.8em
