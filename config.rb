@@ -5,6 +5,7 @@ require_relative 'lib/helpers'
 
 ENV['RACK_ENV']         ||= 'development'
 ENV['GITHUB_USER']      ||= 'BuildYourOwnSinatra'
+ENV['GITHUB_RELEASES_URL'] ||= 'https://github.com/BuildYourOwnSinatra/BuildYourOwnSinatra/releases'
 ENV['PREVIEW_CHAPTERS'] ||= 'introduction setting-up-a-development-environment rack designing-your-framework paterrns-with-your-framework'
 
 ## Index
