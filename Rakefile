@@ -53,21 +53,17 @@ unless ENV['RACK_ENV'] == 'production'
           end
         }
       end
-      epubname = File.join(File.dirname(__FILE__), 'build', 'example_test_with_builder.epub')
+      epubname = File.join(File.dirname(__FILE__), 'build', 'BuildYourOwnSinatra.epub')
       builder.generate_epub(epubname)
     end
 
     task :mobi => :epub do
       Kindlegen.run('build/BuildYourOwnSinatra.epub', '-o', 'build/BuildYourOwnSinatra.mobi')
-      Kindlegen.run('build/BuildYourOwnSinatra-with-bonus.epub', '-o', 'build/BuildYourOwnSinatra-with-bonus.mobi')
     end
 
     task :pdf => :html do
       kit = PDFKit.new(File.new('build/html/pdf.html'))
       kit.to_file('build/BuildYourOwnSinatra.pdf')
-
-      kit = PDFKit.new(File.new('build/html/pdf-with-bonus.html'))
-      kit.to_file('build/BuildYourOwnSinatra-with-bonus.pdf')
     end
   end
 end
