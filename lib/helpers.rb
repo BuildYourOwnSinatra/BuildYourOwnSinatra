@@ -2,17 +2,17 @@ require 'github_api'
 
 module Helpers
   def note(&block)
-    note = Kramdown::Document.new(capture(&block), input: 'GFM').to_html
+    note = Kramdown::Document.new(capture(&block), input: 'GFM', syntax_highlighter: 'rouge').to_html
     concat partial 'partials/note', locals: { note: note }
   end
 
   def tip(&block)
-    tip = Kramdown::Document.new(capture(&block), input: 'GFM').to_html
+    tip = Kramdown::Document.new(capture(&block), input: 'GFM', syntax_highlighter: 'rouge').to_html
     concat partial 'partials/tip', locals: { tip: tip }
   end
 
   def warning(&block)
-    warning = Kramdown::Document.new(capture(&block), input: 'GFM').to_html
+    warning = Kramdown::Document.new(capture(&block), input: 'GFM', syntax_highlighter: 'rouge').to_html
     concat partial 'partials/warning', locals: { warning: warning }
   end
 
