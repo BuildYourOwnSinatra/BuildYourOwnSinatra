@@ -106,13 +106,9 @@ This is straightforward to implement. Our initialize method will take a block an
 class Router
   attr_accessor :routes
 
-  def initialize
+  def initialize(&block)
     @routes = []
-
-    if block_given?
-      block = Proc.new
-      instance_eval(block)
-    end
+    instance_eval(&block) if block_given?
   end
 
   [:delete, :get, :head, :options, :patch, :post, :put, :trace].each do |verb|
@@ -129,18 +125,14 @@ Our complete router class looks like this:
 class Router
   attr_accessor :routes
 
-  def initialize
+  def initialize(&block)
     @routes = []
-
-    if block_given?
-      block = Proc.new
-      instance_eval(block)
-    end
+    instance_eval(&block) if block_given?
   end
 
   [:delete, :get, :head, :options, :patch, :post, :put, :trace].each do |verb|
-    self.define_method verb do |path, &block|
-      routes << Route.new {matcher: path, handler: Proc.new &block }
+    define_method verb do |path, &block|
+      routes << Route.new(matcher: path, handler: Proc.new(&block))
     end
   end
 
@@ -171,9 +163,13 @@ end
 To use it we simply treat it like we would any Rack app:
 
 ```ruby
-run Router.new do
-  get '/cats', {200, {}, ["Cats!"]}
+router = Router.new do
+  get '/cats' do
+    [200, {}, ["Cats!"]]
+  end
 end
+
+run router
 ```
 
 <%= gh_branch 'a-simple-rack-router', 'step-1' %>
