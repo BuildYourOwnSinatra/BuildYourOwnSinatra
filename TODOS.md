@@ -2,3 +2,4 @@
 - [ ] add download link
 - [ ] add refund to sidebar
 - [ ] for now allow any user that bought the book to access all chapters
+- [ ] fix left padding on commit/gh_branch messages on smaller browser widths
