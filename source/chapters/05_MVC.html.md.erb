@@ -20,7 +20,7 @@ Checkout the finished source for this chapter at [BuildYourOwnSinatra/mvc-on-rac
 
 <% end %>
 
-If you are like me you have probably never built a Ruby app without utilizing a framework. Building an app directly on the Rack will help cement the concepts we have already learned and teach us some new ones.
+Building an app directly on the Rack will help cement the concepts we have already learned and teach us some new ones.
 
 First, need to decide what we are going to build. Todo apps and weather apps are always useful. Let's build a todos app for weather. We can call it WeatherTasks.
 
@@ -31,19 +31,17 @@ Our app's structure will look like this:
   - controllers
     - tasks.rb
   - models
-    - Task.rb
+    - task.rb
   - views
-  - application.rb
+  - app.rb
 - lib
-  - base_controller.rb
+  - base_app.rb
 - spec
   - app_spec.rb
   - lib
-    - base_controller_spec.rb
+    - base_app3_spec.rb
   - controllers
-    - tasks_spec.rb
   - models
-    - task_spec.rb
   - spec_helper.rb
 - .rspec
 - Gemfile
@@ -54,17 +52,17 @@ Our app's structure will look like this:
 
 <% tip do %>
 
-You can quickly replicate the directory structure by;
+You can replicate the directory structure by;
 
-1. Cloning the repo and checking out the first commit
-2. You can use [a script](https://gist.github.com/k2052/436355abcc2de24e5a9e) to create it automatically
+1. Cloning the repo and checking out the [step-1 branch](https://github.com/BuildYourOwnSinatra/mvc-on-rack/tree/step-1)
+2. You can use [a script](https://gist.github.com/k2052/436355abcc2de24e5a9e) to create it
 
 <% end %>
 
-Now add dependencies to the Gemfile:
+Add dependencies to the Gemfile:
 
 ```ruby
-source "https://rubygems.org"
+source 'https://rubygems.org'
 
 gem 'puma'
 gem 'rack'
@@ -97,21 +95,37 @@ Then add the following to `spec/spec_helper.rb`:
 ```ruby
 require 'rack/test'
 require 'rack'
+require_relative '../app/app'
 
 RSpec.configure do |config|
   config.include Rack::Test::Methods
 end
 ```
 
-The rack-test methods are going to be looking for an app instance, so let's create one.
+Rack::Test is going to be looking for an app instance, so let's create one.
+
+Add the following to app/app.rb:
+
+```ruby
+$LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__))
+
+require_relative '../lib/base_app'
+
+class App
+  def call(env)
+    [200, {}, ['Hello World!']]
+  end
+end
+```
 
 We will use Rack::Builder to construct our app's instance.
 
 In `config.ru` add the following:
 
 ```ruby
-App = Rack::Builder.new do
-end
+require_relative 'app/app.rb'
+
+run App.new
 ```
 
 This gives us an app instance that we can pass to rack-test:
@@ -129,7 +143,34 @@ end
 
 This parses our config.ru file with builder and returns the first app instance.
 
-Now let's add a spec task to the Rakefile:
+<% warning do %>
+
+If we wanted to we could pass our app directly to rack-test:
+
+```ruby
+let(:app) do
+  App.new
+end
+```
+
+The problem with this is that our tests would not be touching our rackup file. Our config.ru file could be completely broken and we'd never even know.
+
+<% end %>
+
+Let's add a spec to spec/app_spec.rb to test that everything is working:
+
+```ruby
+describe App do
+  describe 'GET /' do
+    it 'returns Hello World' do
+      get '/'
+      expect(last_response.body).to eq('Hello World!')
+    end
+  end
+end
+```
+
+Let's add a spec task to the Rakefile:
 
 ```ruby
 require 'rspec/core/rake_task'
@@ -152,7 +193,7 @@ $ bundle exec rake
 
 We need a Task model; to keep it simple we will return all data statically.
 
-Let'a add a spec to test that our static model instances are returned:
+Let'a add a spec (spec/models/task_spec.rb) to test that our static model instances are returned:
 
 ```ruby
 describe Task do
@@ -193,14 +234,12 @@ weather_tasks/spec/models/task_spec.rb:1:in <top (required)>: uninitialized cons
 
 We are getting warnings about the class not existing.
 
-The straightforwad way to solve this would be to require the Task model in our spec file, but we would have to do this for every class we wrote a spec for. Managing dependencies that way would end up look like something written in voynich not Ruby. Instead, we will build an autoloader into our application class and then require it from our spec helper.
+The straightforward way to solve this would be to require the Task model in our spec file but we would have to do this for every class we write a spec for. Managing dependencies that way would end up look like something written in voynich not Ruby. Instead, we will build an autoloader into our application class and then require it from our spec helper.
 
-Make a file called `app/application.rb`:
+In `app/app.rb` add the following:
 
 ```ruby
 $LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__))
-
-require 'rack'
 
 autoload :Task, 'models/Task'
 ```
@@ -211,19 +250,13 @@ Autoload isn't thread safe except in Ruby versions > 2.0.See: [https://github.co
 
 <% end %>
 
-Then in config.ru add the following:
-
-```ruby
-require_relative 'app/application'
-```
-
 Now run our specs again:
 
 ```sh
 $ bundle exec rake
 
-Finished in 0.00097 seconds (files took 0.11474 seconds to load)
-1 example, 0 failures
+Finished in 0.02785 seconds (files took 0.10673 seconds to load)
+2 examples, 0 failures
 ```
 
 They are passing! That does it for our models!
@@ -253,44 +286,57 @@ describe TasksController do
       it 'returns all the tasks as html' do
         names = Task.all().map { |task| task.name }
 
-        visit '/tasks'
+        get '/tasks'
 
         expect(last_response.status).to eq 200
-        expect(page).to have_selector('li', text: /#{names.join("|")}/, count: 3)
+        expect(last_response.body).to have_tag('li', text: /#{names.join("|")}/, count: 3)
       end
     end
   end
 end
 ```
 
-Now add a tasks controller in `app/controllers/tasks.rb`:
+For testing html response we are using a gem called 'rspec-html-matchers'. Add it to the Gemfile:
+
+
+```ruby
+gem 'rspec-html-matchers', github: 'kucaahbe/rspec-html-matchers'
+```
+
+And require it in `spec/spec_helper.rb`:
+
+```ruby
+require 'rspec-html-matchers'
+
+RSpec.configure do |config|
+  config.include RSpecHtmlMatchers
+# ...
+end
+```
+
+Now add a tasks controller`app/controllers/tasks.rb`:
 
 ```ruby
 class TasksController
-  def initialize
-    @app = app
-  end
-
   def call(env)
   end
 end
 ```
 
-Then add an autoload declaration for our controller to app/application.rb:
+Then add an autoload declaration for our controller to app/app.rb:
 
 ```ruby
 autoload :TasksController, 'controllers/tasks'
 ```
 
-Now add the controller to our App:
+And add the controller to config.ru
 
 ```ruby
-App = Rack::Builder do
-  # maps an instance of our TasksController to `/tasks`.
-  map '/tasks' do
-    run TasksController.new
-  end
+map '/tasks' do
+  run TasksController.new
 end
+
+run App.new
 ```
 
 We need to return two types of responses; One for when the client requests json and another for html. To do this we can check the accept header in env:
@@ -431,6 +477,7 @@ end
 
 <% note do %>
 
+
 Of course, it would be ideal to support splats and all edge cases of strange characters, but that is beyond the scope of this chapter. We will cover a fully featured router when we build our framework.
 
 <% end %>
@@ -494,7 +541,7 @@ def self.routes
 end
 ```
 
-Now in our routes setter we will call add_route:
+Now in our route's setter we will call add_route:
 
 ```ruby
 def self.routes=(routes)
@@ -502,7 +549,7 @@ def self.routes=(routes)
 end
 ```
 
-This allows us to construct a dsl for adding routes:
+This allows us to construct a DSL for adding routes:
 
 ```ruby
 def self.get path, handler
@@ -542,62 +589,49 @@ end
 
 We should extract what we have done and place it into a base controller. Then can extend it from our Tasks controller or any other controller that needs routing.
 
-Our base controller looks like this:
+Our base app/controller looks like this:
 
 ```ruby
-class BaseController
-  def self.get path, handler
-    add_route path: path, handler: Proc.new, method: 'GET'
-  end
-
-  def self.put path, handler
-    add_route path: path, handler: handler, method: 'PUT'
-  end
-
-  def self.post path, handler
-    add_route path: path, handler: handler, method: 'POST'
-  end
-
-  def self.delete path, handler
-    add_route path: path, handler: handler, method: 'DELETE'
-  end
-
-  def self.add_route(path: path, handler: handler, method: 'GET')
-    @routes[method].push {route: compile(path), handler: handler}
-  end
-
-  def self.routes
-    @routes ||= {}
-  end
-
-  def self.routes=(routes)
-    routes.each do |route|
-      add_route route
+Route = Struct.new(:path, :block)
+class BaseApp
+  class << self
+    %w(GET PUT POST DELETE).each do |verb|
+      define_method verb.downcase.to_sym do |path, handler|
+        add_route path: path, handler: handler, method: verb
+      end
     end
-  end
 
-  def self.compile path
-    if path.respond_to? :match
-      path
-    elsif path.respond_to? :to_str
-      postfix = '/' if path =~ /\/\z/
-      segments = path.split('/')
-      /\A#{segments.join('/')}#{postfix}\z/
-    else
-      raise TypeError, path
+    def routes
+      @routes ||= {'GET' => [], 'PUT' => [], 'POST' => [], 'DELETE' => []}
+    end
+
+    def add_route(path: path, handler: handler, method: 'GET')
+      routes[method].push({route: compile(path), handler: handler})
+    end
+
+    def compile path
+      if path.respond_to? :match
+        path
+      elsif path.respond_to? :to_str
+        postfix = '/' if path =~ /\/\z/
+        segments = path.split('/')
+        /\A#{segments.join('/')}#{postfix}\z/
+      else
+        raise TypeError, path
+      end
     end
   end
 
   def find_route method, path
-    @@routes[method].each do |route|
-      return route if route.match(path)
+    self.class.routes[method].each do |route|
+      return route if route[:route].match(path)
     end
 
     nil
   end
 
   def call(env)
-    if route = find_route env['REQUEST_METHOD'], env['PATH_INFO']
+    if route = find_route(env['REQUEST_METHOD'], env['PATH_INFO'])
       self.send(route[:handler], env)
     else
       Rack::Response.new('Not found', 404)
@@ -606,7 +640,7 @@ class BaseController
 end
 ```
 
-Then our final TasksController is:
+Our final TasksController is:
 
 ```ruby
 class TasksController < BaseController
@@ -633,18 +667,11 @@ end
 
 Right now we are manually rendering our html but we can do a lot better. Most of the rendering systems we use in our favorite frameworks rest on the foundations of one gem, Tilt. Tilt is a thin wrapper over almost all the templating systems we might want to use.
 
-Let's add Tilt and configure it to use slim:
+First require tilt and slim in app/app.rb:
 
 ```ruby
-gem 'slim'
-gem 'tilt'
-```
-
-And in our BaseController file do the following:
-
-```ruby
-require 'slim'
 require 'tilt'
+require 'slim'
 ```
 
 Utilizing Tilt is dead simple, we simply instantiate a new class against a filepath and Tilt will figure out which engine to process it with. Then we only need to call the render method and return it as a response body.
@@ -671,11 +698,13 @@ def render(path)
 end
 
 def file(path)
-  File.join(File.expand_path(File.dirname(__FILE__)), 'app', 'views', path)
+  File.join(File.expand_path(File.dirname(__FILE__)), '..', 'app', 'views', path)
 end
 ```
 
-Add these two methods to the BaseController class, then add a view called index.slim to views/tasks:
+Add these two methods to the BaseApp (lib/bass_app.rb) class.
+
+Then add a view called index.slim to app/views/tasks:
 
 ```slim
 ul#task
@@ -686,15 +715,15 @@ ul#task
 Now we can change the all() method on our controller to use our new view and render method:
 
 ```ruby
-  def all(env)
-    @tasks = Task.all()
+def all(env)
+  @tasks = Task.all()
 
-    if env['HTTP_ACCEPT'] == 'application/json'
-      [200, {"Content-Type" => "application/json"}, [@tasks.to_json]]
-    else
-      [200, {"Content-Type" => "text/html"}, [render('tasks/index')]]
-    end
+  if env['HTTP_ACCEPT'] == 'application/json'
+    [200, {"Content-Type" => "application/json"}, [@tasks.to_json]]
+  else
+    [200, {"Content-Type" => "text/html"}, [render('tasks/index')]]
   end
+end
 ```
 
 <%= gh_branch 'mvc-on-rack', 'step-5' %>
@@ -705,7 +734,7 @@ It is common that views will need some sort of help along their way. Since our c
 
 ```ruby
 module TextHelpers
-  def cats_are_awesome text
+  def cats_are_awesome(text)
     text + " cats are awesome!"
   end
 end
@@ -750,11 +779,11 @@ end
 Now create a new file called app/controllers/weather.rb:
 
 ```ruby
-class WeatherController < BaseController
+class WeatherController < BaseApp
   get '/status', :status
 
   def status(env)
-    Rack::Response.new("It is sunny with a slight chance of apocalypse!", 200)
+    Rack::Response.new('It is sunny with a slight chance of apocalypse!', 200)
   end
 end
 ```
@@ -778,12 +807,12 @@ end
 You might wonder why we just cant just put full path's on our routes and instead of scoping our controllers using `map`, just run both. Like this:
 
 ```ruby
-class WeatherController < BaseController
+class WeatherController < BaseApp
   get '/weather/status', :status
   # ...
 end
 
-class TasksController < BaseController
+class TasksController < BaseApp
   get '/tasks/all', :all
   # ...
 end
