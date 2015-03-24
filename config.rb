@@ -44,6 +44,10 @@ end
 
 configure :build do
   compass_config do |config|
+    if ENV['EPUB']
+      images_path = '../Images'
+    end
+    
     config.sass_options = {:debug_info => false, :line_comments => false}
   end
 end

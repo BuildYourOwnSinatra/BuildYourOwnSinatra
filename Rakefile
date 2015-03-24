@@ -20,7 +20,9 @@ unless ENV['RACK_ENV'] == 'production'
       sh 'bundle exec middleman build'
     end
 
-    task :xhtml => [:environment, 'build:html'] do
+    task :xhtml => [:environment] do
+      sh 'EPUB=true bundle exec middleman build'
+      
       dir = File.join(File.dirname(__FILE__),  'build', 'html', 'chapters')
       @app.blog.articles.each do |chapter|
         content = chapter.render(layout: :epub)
@@ -44,6 +46,7 @@ unless ENV['RACK_ENV'] == 'production'
         resources(:workdir => File.join(File.dirname(__FILE__), 'build', 'html')) {
           cover_image 'Images/cover.jpg' => 'images/cover.jpg'
           files 'Styles/styles.css' => 'css/styles.css'
+          glob 'images/*.svg'
 
           ordered do
             chapters.each do |chapter|
