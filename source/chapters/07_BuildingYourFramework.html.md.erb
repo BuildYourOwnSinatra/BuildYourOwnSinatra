@@ -82,7 +82,7 @@ Gem::Specification.new do |s|
 end
 ```
 
-We depend on; Mustermann for route matching and fast_blank for blank? support. We will be using rspec and rack-test for testing. Rubocop provides style guideline checking.
+We depend on; [Mustermann](https://github.com/rkh/mustermann) for route matching and fast_blank for blank? support. We will be using rspec and rack-test for testing. [Rubocop](https://github.com/bbatsov/rubocop) provides style guideline checking.
 
 <% note do %>
 
@@ -94,7 +94,7 @@ Our gemspec loads a /lib/eldr/version file, let's add one:
 
 ```ruby
 module Eldr
-  VERSION = '0.0.3'
+  VERSION = '0.0.1'
 end
 ```
 
@@ -138,7 +138,7 @@ We want our controllers to be instances but we don't want a user to have to init
 
 ```ruby
 def self.call(env)
-  self.new.call()
+  self.new.call(env)
 end
 ```
 
@@ -168,6 +168,35 @@ end
 This might seem like it would have a perfomance hit but dup is rather efficient; the stray objects are garbage collected long before they become a memory issue.
 
 <% end %>
+
+We need to load our framework from our specs. Let's add a file called lib/eldr.rb:
+
+```ruby
+require_relative 'eldr/version'
+require_relative 'eldr/app'
+```
+
+And then a spec/spec_helper.rb that loads it:
+
+```ruby
+require 'rack/test'
+require 'rack'
+require_relative '../lib/eldr'
+
+# Hardcode an instance into a global because rack-test likes to get too clever
+RSpec.configure do |config|
+  config.include Rack::Test::Methods
+  config.pattern = '**{,/*/**}/*_spec.rb'
+end
+```
+
+Finally add `--require ./spec/spec_helper` to .rspec
+
+Then test that is working by running:
+
+```sh
+$ bundle exec rspec
+```
 
 <%= gh_branch 'building-eldr', 'step-2' %>
 
@@ -234,9 +263,11 @@ class StackAppExample < Eldr::App
   end
 
   def call!(env)
-    [200, {}, [env['simple.counter_middleware']]
+    [200, {}, [env['eldr.simple_counter']]]
   end
 end
+
+run StackAppExample
 ```
 
 Let's add a spec (spec/examples/stack_app_example_spec.rb) to test that this works:
@@ -244,7 +275,7 @@ Let's add a spec (spec/examples/stack_app_example_spec.rb) to test that this wor
 ```ruby
 describe 'StackAppExample' do
   let(:app) do
-    path = File.expand_path('../../examples/stack_app.ru', File.dirname(__FILE__))
+    path = File.expand_path('../../examples/stack_app_example.ru', File.dirname(__FILE__))
     Rack::Builder.parse_file(path).first
   end
 
@@ -262,11 +293,23 @@ describe 'StackAppExample' do
   describe 'GET /' do
     it 'returns the counter' do
       response = rt.get('/')
-      expect(response.body).to eq '1'
+      expect(response.body).to eq '2'
     end
   end
 end
 ```
+
+After running this we will get an error:
+
+```sh
+1) StackAppExample GET / returns the counter
+   Failure/Error: expect(response.body).to eq '1'
+
+     expected: "1"
+          got: "2"
+```
+
+This is because
 
 <% tip do %>
 
@@ -294,7 +337,7 @@ module Eldr
     end
 
     def use(middleware, *args, &block)
-      if middleware.is_a? Array # existing array of middleware
+      if middleware.is_a? Array
         @middleware.push(*middleware)
       else
         if @map
@@ -335,14 +378,13 @@ module Eldr
     def generate_map(default_app, mapping)
       mapped = default_app ? { '/' => default_app } : {}
       mapping.each { |r, b| mapped[r] = self.class.new(default_app, &b).to_app }
-        URLMap.new(mapped)
-      end
+      Rack::URLMap.new(mapped)
     end
   end
 end
 ```
 
-Let's add a spec (spec/builder_spec.r) for this new Builder class:
+Let's add a spec (spec/builder_spec.rb) for this new Builder class:
 
 ```ruby
 describe Eldr::Builder do
@@ -398,8 +440,7 @@ class SimpleMiddleware
 end
 
 class TestInheritanceApp < Eldr::App
-  use SimpleCounterMiddleware
-  set :bob, 'what about him?'
+  use SimpleMiddleware
 end
 
 class InheritedApp < TestInheritanceApp
@@ -428,12 +469,6 @@ describe 'InheritedApp' do
     it 'counts using counter middleware' do
       response = rt.get '/'
       expect(response.body).to eq('1')
-    end
-  end
-
-  describe '.configuration#bob' do
-    it 'returns "what about him?"' do
-      expect(app.configuration.bob).to eq('what about him?')
     end
   end
 end
@@ -526,7 +561,7 @@ class Route
   end
 
   def matcher
-    @matcher ||= Matcher.new(path, capture: @capture)
+    @matcher ||= Matcher.new(@path, capture: @capture)
   end
 
   def match(pattern)
@@ -629,7 +664,7 @@ Let's add a spec for the recognizer to spec/recognizer_spec.rb:
 ```ruby
 describe Eldr::Recognizer do
   describe '#call' do
-    let(:routes) { [{ 'GET' => [Eldr::Route.new(path: '/cats') }] }
+    let(:routes) { {get: [Eldr::Route.new(path: '/cats')] } }
     let(:recognizer) { Eldr::Recognizer.new(routes) }
 
     context 'when there are matching routes' do
@@ -666,7 +701,7 @@ class Route
   def call(env)
     @env = env
 
-    handler.call(env)
+    @handler.call(env)
   end
 end
 ```
@@ -688,6 +723,8 @@ describe Eldr::Route do
   end
 end
 ```
+
+<%= gh_branch 'building-eldr', 'step-7' %>
 
 ### Rails Style Handlers
 
@@ -746,19 +783,23 @@ end
 Now that we have a Matcher, a Recognizer, and a Route; we can add routing methods to the App class. The first thing we need is an `.add()` method for pushing a new Route onto `.routes`:
 
 ```ruby
-class << self
-  attr_accessor :routes
-  def routes
-    @routes ||= { delete: [], get: [], head: [], options: [], patch: [], post: [], put: [] }
-  end
+module Eldr
+  class App
+    class << self
+      attr_accessor :routes
+      def routes
+        @routes ||= { delete: [], get: [], head: [], options: [], patch: [], post: [], put: [] }
+      end
 
-  def add(verb: :get, path: '/', options: {}, handler: nil)
-    handler = Proc.new if block_given?
-    route =  Route.new(verb: verb, path: path, options: options, handler: handler)
-    routes[verb] << route
-    route
+      def add(verb: :get, path: '/', handler: nil)
+        handler = Proc.new if block_given?
+        route =  Route.new(verb: verb, path: path, handler: handler)
+        routes[verb] << route
+        route
+      end
+      alias_method :<<, :add
+    end
   end
-  alias_method :<<, :add
 end
 ```
 
@@ -766,6 +807,7 @@ Then we can use define_method for the get, post, delete methods etc:
 
 ```ruby
 class << self
+  HTTP_VERBS = %w(DELETE GET HEAD OPTIONS PATCH POST PUT)
   HTTP_VERBS.each do |verb|
     define_method verb.downcase.to_sym do |path, *args, &block|
       handler = Proc.new(&block) if block
@@ -781,7 +823,7 @@ end
 Let's add a recognize method for recognizing routes:
 
 ```ruby
-def recognizer
+def self.recognizer
   @recognizer ||= Recognizer.new(routes)
 end
 
@@ -798,8 +840,7 @@ def call!(env)
 
   recognize(env).each do |route|
     env['eldr.route'] = route
-    params.merge!(route.params(env['PATH_INFO']))
-    catch(:pass) { return route.call(env, app: self) }
+    catch(:pass) { return route.call(env) }
   end
 rescue => error
   if error.respond_to? :call
@@ -810,12 +851,36 @@ rescue => error
 end
 ```
 
-We can use it like this:
+We use it like this:
 
 ```ruby
-class App < Eldr::App
+class HelloWorld < Eldr::App
   get '/' do
     [200, {}, ['Hello World!']]
+  end
+end
+
+run HelloWorld
+```
+
+Let's test that all is working by adding a spec to spec/examples/hello_world_spec.rb:
+
+```ruby
+describe 'HelloWorldExample' do
+  let(:app) do
+    path = File.expand_path("../../examples/hello_world.ru", File.dirname(__FILE__))
+    Rack::Builder.parse_file(path).first
+  end
+
+  let(:rt) do
+    Rack::Test::Session.new(app)
+  end
+
+  describe 'GET /' do
+    it 'returns hello world' do
+      response = rt.get '/'
+      expect(response.body).to eq('Hello World!')
+    end
   end
 end
 ```
@@ -835,7 +900,7 @@ get '/', name: :index, do
 end
 ```
 
-The best place for filters is on the route itself. We can then call them in the same #call method that calls the handler.  
+The best place for filters is on the route itself. The we cann call them in the same #call method that calls the handler.
 
 First let's add an array for holding them:
 
@@ -857,14 +922,14 @@ class Route
     @env = env
 
     before_filters.each { |filter| filter.call(env) }
-    response = handler.call(env)
+    response = @handler.call(env)
     after_filters.each { |filter| filter.call(env) }
     response
   end
 end
 ```
 
-Let's add a spec to `spec/route_spec.rb`:
+Let's add a spec for this to `spec/route_spec.rb`:
 
 ```ruby
 describe '#call' do
@@ -940,7 +1005,7 @@ def add(verb: :get, path: '/', name: '', handler: nil)
   route.before_filters = before_filters[name] if before_filters.include? name
   route.after_filters  = before_filters[name] if before_filters.include? name
 
-  route.before_filters.push(*before_filters[:all]
+  route.before_filters.push(*before_filters[:all])
   route.after_filters.push(*before_filters[:all])
 
   routes[verb] << route
@@ -967,60 +1032,28 @@ class FiltersApp < Eldr::App
 end
 ```
 
-Let's modify our route spec (spec/route_spec.rb) to test before/after filters:
-
-```ruby
-describe '#call'
-  context 'when there are before filters' do
-    let(:route) do
-      Eldr::Route.new(handler: proc { 'cats' })
-    end
-
-    it 'calls the before filters' do
-      called = false
-      route.before_filters << proc { called = true }
-      route.call({})
-      expect(called).to eq(true)
-    end
-  end
-
-  context 'when there are after filters' do
-    let(:route) do
-      Eldr::Route.new(handler: proc { 'cats' })
-    end
-
-    it 'calls the before filters' do
-      called = false
-      route.after_filters << proc { called = true }
-      route.call({})
-      expect(called).to eq(true)
-    end
-  end
-end
-```
-
 Now modify our app spec (spec/app_spec.rb) to make sure are before/after methods work:
 
 ```ruby
-  describe '.before' do
-    it 'adds a before filter' do
-      bob = Class.new(Eldr::App)
-      bob.before {}
-      bob.before(:cats) { }
-      expect(bob.before_filters[:all].length).to eq(1)
-      expect(bob.before_filters[:cats].length).to eq(1)
-    end
+describe '.before' do
+  it 'adds a before filter' do
+    bob = Class.new(Eldr::App)
+    bob.before {}
+    bob.before(:cats) { }
+    expect(bob.before_filters[:all].length).to eq(1)
+    expect(bob.before_filters[:cats].length).to eq(1)
   end
+end
 
-  describe '.after' do
-    it 'adds an before filter' do
-      bob = Class.new(Eldr::App)
-      bob.after {}
-      bob.after(:cats) { }
-      expect(bob.after_filters[:all].length).to eq(1)
-      expect(bob.after_filters[:cats].length).to eq(1)
-    end
+describe '.after' do
+  it 'adds an before filter' do
+    bob = Class.new(Eldr::App)
+    bob.after {}
+    bob.after(:cats) { }
+    expect(bob.after_filters[:all].length).to eq(1)
+    expect(bob.after_filters[:cats].length).to eq(1)
   end
+end
 ```
 
 <%= gh_branch 'building-eldr', 'step-10' %>
@@ -1045,15 +1078,13 @@ We can resolve this by passing an instance of the app to the route; if the app e
 
 ```ruby
 class Route
-  attr_accessor :app
+  attr_accessor :app, :handler
 
   def call(env, app: nil)
     @app ||= app
 
     call_before_filters(env)
-
     resp = call_handler(env)
-
     call_after_filters(env)
 
     resp
@@ -1068,7 +1099,7 @@ class Route
     end
   end
 
-  def call_after_filters
+  def call_after_filters(env)
     if app
       app.class.after_filters[:all].each { |filter| app.instance_exec(env, &filter) }
       after_filters.each                 { |filter| app.instance_exec(env, &filter) }
@@ -1078,10 +1109,67 @@ class Route
   end
 
   def call_handler(env)
-    if app
-      app.instance_exec(env, handler)
+    if app and handler.is_a? Proc
+      app.instance_exec(env, &handler)
     else
       handler.call(env)
+    end
+  end
+end
+```
+
+Now modify App#call! to pass the app instance:
+
+```ruby
+def call!(env)
+  @env = env
+
+  recognize(env).each do |route|
+    env['eldr.route'] = route
+    catch(:pass) { return route.call(env, app: self) }
+  end
+  rescue => error
+    if error.respond_to? :call
+      error.call(env)
+    else
+      raise error
+    end
+end
+```
+
+Add an example app to examples/instance_vars.ru:
+
+```ruby
+class InstanceVarsExample < Eldr::App
+  before do
+    @instance_var = 'cats'
+  end
+
+  get '/instance-var' do
+    [200, {}, [@instance_var]]
+  end
+end
+
+run InstanceVarsExample
+```
+
+And then a spec to spec/examples/instance_vars_spec.rb:
+
+```ruby
+describe 'InstanceVarsExample' do
+  let(:app) do
+    path = File.expand_path('../../examples/instance_vars.ru', File.dirname(__FILE__))
+    Rack::Builder.parse_file(path).first
+  end
+
+  let(:rt) do
+    Rack::Test::Session.new(app)
+  end
+
+  describe 'GET /instance-var' do
+    it 'returns cats' do
+      response = rt.get('/instance-var')
+      expect(response.body).to eq('cats')
     end
   end
 end
@@ -1115,6 +1203,11 @@ module Eldr
     def initialize
       defaults = { lock: false }
       table.merge!(defaults)
+    end
+
+    def merge!(hash)
+      hash = hash.table unless hash.is_a? Hash
+      @table.merge!(hash)
     end
 
     def set(key, value)
@@ -1191,6 +1284,11 @@ class App
     def set(key, value)
       configuration.set(key, value)
     end
+
+    def inherited(base)
+      base.builder.use builder.middleware
+      base.configuration.merge!(configuration)
+    end
   end
 
   def initialize(configuration = nil)
@@ -1200,20 +1298,26 @@ class App
 end
 ```
 
-Now let's add some spec to make sure all is working:
+Now let's add some spec (spec/app_spec.rb) to make sure all is working:
 
 ```ruby
+describe '.inherited' do
+  it 'inherits configuration' do
+    bob = Class.new(Eldr::App)
+    bob.set(:bob, 'what about him?')
+
+    inherited = Class.new(bob)
+    expect(inherited.configuration.bob).to eq('what about him?')
+  end
+end
 ```
 
 <%= gh_branch 'building-eldr', 'step-12' %>
 
-## The Final Class
+Congratulations you have built a basic framework! But what about helpers?!
 
-We still have a couple things to add. A configuration accessor, some helper accessors for params etc. The final class looks like this:
+<% tip %>
 
-```ruby
-```
+Checkout the finished framework's repo at [eldr-rb/eldr](https://github.com/eld-rb/eldr)
 
-Congratulations you have built your framework! But what about helpers?!
-
-<%= gh_branch 'building-eldr', 'step-13' %>
+<% end %>
