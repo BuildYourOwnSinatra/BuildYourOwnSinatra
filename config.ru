@@ -87,13 +87,13 @@ class App < Eldr::App
     end
   end
 
-  get '/chapters/:slug(.html)' do
+  get '/chapters/:slug' do
     file = "chapters/#{params['slug']}.html"
     if File.exists?(File.join(__dir__, "build/html/#{file}"))
       if preview_chapters.include? params['slug']
         send_file(file)
       else
-        if signed_in? and current_user.can_read_chapter?(params['slug'])
+        if signed_in? and !current_user.package.nil?
           send_file file
         else
           redirect_to '/upgrade'

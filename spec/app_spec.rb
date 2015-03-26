@@ -82,18 +82,20 @@ describe 'App' do
 
         it 'returns the chapter' do
           allow_any_instance_of(User).to receive(:can_read_chapter?).and_return(true)
+          allow_any_instance_of(User).to receive(:package).and_return(true)
           get '/chapters/responses', nil, {'rack.session' => { "#{ENV['SESSION_ID']}" => user.id }}
           expect(last_response.status).to eq(200)
         end
       end
 
-      context 'not allowed to read chapter' do
+      context 'and not allowed to read chapter' do
         let(:user) { FactoryGirl.create(:user) }
 
         it 'returns an upgrade page' do
-          allow_any_instance_of(User).to receive(:can_read_chapter?).and_return(false)
+          allow_any_instance_of(User).to receive(:package).and_return(nil)
           get '/chapters/mvc-on-rack', nil, {'rack.session' => { "#{ENV['SESSION_ID']}" => user.id }}
-          expect(last_response.status).to eq(401)
+          expect(last_response.status).to eq(303)
+          expect(last_response.location).to eq('/upgrade')
         end
       end
     end
