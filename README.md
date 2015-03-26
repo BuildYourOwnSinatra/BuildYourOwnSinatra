@@ -50,6 +50,20 @@ Mobi:
 $ bundle exec rake build:mobi
 ```
 
+## Testing
+
+For the tests to pass you must first build the HTML version of the book:
+
+```sh
+$ bundle exec middleman build
+```
+
+Then just run rspec:
+
+```sh
+$ bundle exec rspec
+```
+
 ## Live Coding
 
 The CSS is specifically adapted to be live edited using [Takana](https://github.com/mechio/takana). This comes with some drawbacks; 1. We have only use libsass features and 2. Sprocket asset paths cant be shared.
