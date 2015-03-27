@@ -10,6 +10,12 @@ First install all the gems:
 $ bundle install
 ```
 
+And kindlegen:
+
+```sh
+$ brew install homebrew/binary/kindlegen
+```
+
 Then install wkhtmltopdf:
 
 On OS X:

@@ -22,7 +22,7 @@ unless ENV['RACK_ENV'] == 'production'
 
     task :xhtml => [:environment] do
       sh 'EPUB=true bundle exec middleman build'
-      
+
       dir = File.join(File.dirname(__FILE__),  'build', 'html', 'chapters')
       @app.blog.articles.each do |chapter|
         content = chapter.render(layout: :epub)
@@ -61,7 +61,7 @@ unless ENV['RACK_ENV'] == 'production'
     end
 
     task :mobi => :epub do
-      Kindlegen.run('build/BuildYourOwnSinatra.epub', '-o', 'build/BuildYourOwnSinatra.mobi')
+      sh 'kindlegen build/BuildYourOwnSinatra.epub -o BuildYourOwnSinatra.mobi'
     end
 
     task :pdf => :html do
