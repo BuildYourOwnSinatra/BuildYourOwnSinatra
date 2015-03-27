@@ -43,7 +43,8 @@ class App < Eldr::App
   include Eldr::Assets
 
   uri = URI.parse(ENV['MONGODB_URI'])
-  use Rack::Session::Moneta, store: Moneta.new(:Mongo, {
+  ENV['SESSIONS_DOMAIN'] ||= '127.0.0.1'
+  use Rack::Session::Moneta, domain: ENV['SESSIONS_DOMAIN'], store: Moneta.new(:Mongo, {
     :host     => uri.host,
     :port     => uri.port,
     :db       => uri.path.gsub(/^\//, ''),
