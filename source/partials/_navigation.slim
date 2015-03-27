@@ -6,6 +6,7 @@
         == prev_article.title
   .next
     - if next_article = current_article.next_article
-      a rel="next" href=next_article.url
-        == next_article.title
-        |&nbsp;&nbsp;»
+      - if next_article.data.published == true
+        a rel="next" href=next_article.url
+          == next_article.title
+          |&nbsp;&nbsp;»
