@@ -22,7 +22,7 @@ Checkout the finished source for this chapter at [BuildYourOwnSinatra/mvc-on-rac
 
 Building an app directly on the Rack will help cement the concepts we have already learned and teach us some new ones.
 
-First, need to decide what we are going to build. Todo apps and weather apps are always useful. Let's build a todos app for weather. We can call it WeatherTasks.
+First, we need to decide what we are going to build. Todo apps and weather apps are both always useful. Let's build a todos app for weather. We can call it WeatherTasks.
 
 Our app's structure will look like this:
 
@@ -170,7 +170,7 @@ describe App do
 end
 ```
 
-Let's add a spec task to the Rakefile:
+Then add a spec task to the Rakefile:
 
 ```ruby
 require 'rspec/core/rake_task'
@@ -193,7 +193,7 @@ $ bundle exec rake
 
 We need a Task model; to keep it simple we will return all data statically.
 
-Let'a add a spec (spec/models/task_spec.rb) to test that our static model instances are returned:
+Add a spec (spec/models/task_spec.rb) to test that our static model instances are returned:
 
 ```ruby
 describe Task do
@@ -234,7 +234,7 @@ weather_tasks/spec/models/task_spec.rb:1:in <top (required)>: uninitialized cons
 
 We are getting warnings about the class not existing.
 
-The straightforward way to solve this would be to require the Task model in our spec file but we would have to do this for every class we write a spec for. Managing dependencies that way would end up look like something written in voynich not Ruby. Instead, we will build an autoloader into our application class and then require it from our spec helper.
+The straightforward way to solve this would be to require the Task model in our spec file but we would have to do this for every class we write a spec for. Managing dependencies that way would end up look like something written in voynich not Ruby. Instead, we will add autoloads onto our application class and then require it from our spec helper.
 
 In `app/app.rb` add the following:
 

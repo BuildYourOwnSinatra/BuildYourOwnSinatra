@@ -32,7 +32,7 @@ map '/dogs' do
 end
 ```
 
-We will value clarity over abstraction. Instead of pumping every use case into the framework, we will focus on making it easy to extend. Features are dangerous, with every feature added we lose a bit of clarity. We will strive to keep the framework minimal, not so we have less lines of code but so it can be understood. When you understand your framework, a missing feature doesn't matter much, you can always add it yourself.
+We will value clarity over abstraction. Instead of pumping every use case into the framework we will focus on making it easy to extend. Features are dangerous, with every feature added we lose a bit of clarity. We will strive to keep the framework minimal, not so we have less lines of code but so it can be understood. When you understand your framework a missing feature doesn't matter much, you can always add it yourself.
 
 Our framework will shun convention in favor of extension. It will encourage you to build and assemble your app like you build middleware. You will build up layers of patterns and abstractions until your app emerges from the framework. Your app wont be built with a DSL it will become the DSL.
 
@@ -40,9 +40,9 @@ Our framework will be built on patterns we already know; controllers will be Rac
 
 ## The API
 
-Many frameworks provide more than one way of building an app. Want your get, post etc methods in one file? Sure no problem! We will include the framework into the current scope when you require it. Now your ruby files have routes. Want to build your apps as classes? Just extend the base class!
+Many frameworks provide more than one way of building an app. Want your get, post etc methods in one file? Sure no problem! We will include the framework into the current scope when you require it. Now your ruby files have routes. Want to build your apps as classes? Just extend the base class! Want helpers? Just put them in this block! But don't forget to add a .registered() callback!
 
-Framework developers do this to attract more types of developers. Like it this way?! You can use our framework that way too! Don't like it that way?! No problem! Uou use our framework in an entirely different way!
+Framework developers do this to attract more types of developers. Like it this way?! You can use our framework that way too! Don't like it that way?! No problem! Use our framework in an entirely different way!
 
 Having more than one way to do things breeds confusion. Our framework's API will be clear. It will look like this:
 
@@ -60,7 +60,7 @@ Route compilation will be handled using [Mustermann](https://github.com/rkh/must
 
 ### Responses
 
-Many frameworks abstract away responses. This makes for a short demo but makes understanding where the data for the response comes from an excercise in maze running.
+Many frameworks abstract away responses. This makes for a short demo but makes understanding where the data for the response comes from an excercise in maze running. You shouldn't have to be the chosen one to use a framework.
 
 Our responses will be rack responses. Route handlers must conform to the rack specification and return a response code, a header hash, and a body iterator.
 

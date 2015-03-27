@@ -52,7 +52,7 @@ This will put your helper method on every instance of your app's class and make 
 Start by adding the following to your gemfile:
 
 ```ruby
-gem 'edlr'
+gem 'eldr'
 ```
 
 Then run bundler:
@@ -61,7 +61,7 @@ Then run bundler:
 $ bundle install
 ```
 
-Now create a new file called app.rb with the following contents:
+Now create a new file called app.rb with the following:
 
 ```ruby
 class App < Eldr::App
@@ -88,8 +88,7 @@ When you visit http:///localhost:9292 in your browser you should see "Hello Worl
 
 ## Rendering a Template
 
-Eldr provides no render helper in its core but it is easy to define your own.
-One can use Tilt as the templating library (with your engine of choice) and then create some helper methods to handle finding the template and rendering it.
+Eldr provides no render helper in its core but it is easy to define your own. One can use Tilt as the templating library (with your engine of choice) and then create some helper methods to handle finding the template and rendering it.
 
 Create a module with the following:
 
@@ -107,8 +106,7 @@ module RenderingHelpers
 end
 ```
 
-This takes a template, finds the template and then passes it off to tilt for handling.
-If the template does not exist it raises a NotFoundError.
+This takes a template, finds the template and then passes it off to tilt for handling. If the template does not exist it raises a NotFoundError.
 
 We can use these helpers by including them in our App:
 
@@ -247,9 +245,9 @@ Rails provides all sorts of ways to digest the data passed to it by a client. At
 
 The wrapper modifies the request _only_ on the env object, this means at any point we can duplicate the state of the wrapper by passing it the env; and any objects that need parsed request data (e.g params) will know to find it in the env object.
 
-The most typical way rails helps us with requests is through parameter parsing and validation. If we of params a just a hash, then validating, error handling on them etc is simple, we can use all the tools we are already used to.
+The most typical way rails helps us with requests is through parameter parsing and validation. If we remember that params a just a hash then; parsing them, validating them, handling errors on them etc is simple, we can use all the tools we are already used to.
 
-Lets start by getting our parameters into a hash. To do this we pass env into Rack::Request; a wrapper object that parses the query string and injects the results into @env["rack.request.query_hash"]:
+Let's start by getting our parameters into a hash. To do this we pass env into Rack::Request; a wrapper object that parses the query string and injects the results into @env["rack.request.query_hash"]:
 
 ```ruby
 class App < Eldr::App
@@ -278,7 +276,7 @@ end
 To _validate_ a request we need to instantiate CatParams:
 
 ```ruby
-class InvalidParams < Edlr::ResponseError
+class InvalidParams < Eldr::ResponseError
   def status
     400
   end
@@ -301,7 +299,7 @@ If our parameters are invalid we raise an InvalidParams response (Eldr has error
 
 ## Error Handling
 
-You can `raise` an error with any class that inherits from StandardError and responds to call. This is useful in before filters, when you want to halt a route from executing.
+You can `raise` an error with any class that inherits from StandardError and responds to call. This is useful when you want to halt a route from executing in for example, a before filter.
 
 An error class looks like this:
 
@@ -316,7 +314,7 @@ end
 And you can use it like a standard ruby error class:
 
 ```ruby
-app = Edlr::App.new do
+app = Eldr::App.new do
   get '/' do
     raise ErrorResponse, "Bad Data"
   end
@@ -330,7 +328,7 @@ run app
 Eldr will NOT catch all errors. In a production setting you will need to use middleware to make certain nothing ever explodes at your user. Something like [rack-robustness](https://github.com/blambeau/rack-robustness) will work fine:
 
 ```ruby
-class App < Edlr::App
+class App < Eldr::App
   use Rack::Robustness do |g|
     g.on(ArgumentError){|ex| 400 }
     g.on(SecurityError){|ex| 403 }
@@ -354,19 +352,19 @@ run App
 
 Most microframeworks provide a DSL for route conditions. This needlesly complicates a framework with multiple ways to do things. Do we check for _x_ in our conditions or do we check for it in the route's handler?
 
-Eldr's strives for clarity. There is only one place to place logic for a route, in the route's handler.
+Eldr strives for clarity. There is only one place to place logic for a route, in the route's handler.
 
-If you want a route to only be executed under certain conditions you check those conditions in the handler and then `throw :pass` if conditions match/do not match:
+If you want a route to only be executed under certain conditions then check those conditions in the handler and then `throw :pass` if conditions match/do not match:
 
 ```ruby
-  get '/' do
-    throw :pass if params['agent'] == 'secret'
-    # respond here
-  end
+get '/' do
+  throw :pass if params['agent'] == 'secret'
+  # respond here
+end
 
-  # Executed only if we pass from the first route
-  get '/' do
-  end
+# Executed only if we pass from the first route
+get '/' do
+end
 ```
 
 ## Access Control
@@ -381,7 +379,7 @@ end
 
 The DSL pulled a route's name and its roles into a before filter, then checked them against the current_user's roles. The filter itself was five lines.
 
-I soon realized that this was redundant abstraction. The DSL didn't save me any coding, it merely gave the code pretty words. I was sacrificing clarity for poetry.
+I soon realized that this was redundant abstraction. The DSL didn't save me any coding it merely gave the code pretty words. I was sacrificing clarity for poetry.
 
 To protect a route you need a before filter that checks the user for roles. It can look like this:
 
@@ -393,12 +391,11 @@ before :create, :edit do
 end
 ```
 
-It is just as short as any DSL and ambiguity free. Any ruby developer can guess what
-it means without having to know your framework's secret language.
+It is just as short as any DSL and ambiguity free. Any ruby developer can guess what it means without having to know the framework's secret language.
 
 ## Inheritance
 
-In many frameworks you are encouraged to wrap your controllers in a central app. You build a main app that handles routing, scoping, sharing configuration and middleware etc; often controllers are merely blocks executed in the context of this app. This allows you to build DRY controllers but at the cost of a large central app.
+In many frameworks you are encouraged to wrap your controllers in a central app class. You build a main app that handles routing, scoping, sharing configuration and middleware etc and controllers are merely blocks executed in the context of that app. This allows you to build DRY controllers but at the cost of a large central app.
 
 In Eldr we reverse this model and encourage you to build up your controllers through inheritance. Eldr apps can inherit middleware and configuration from parent apps. This allows you to define a base app and allow all your controllers to share the same configuration.
 
@@ -442,7 +439,7 @@ You can extend Eldr in two ways;
 
 Ruby patterns are something you are already intimately familiar with. Include, extend, ducks, blocks, procs etc are something you know like the front of your MacBook (btw you should _really_ clean that smudge). Eldr is a DSL you already know how to speak.
 
-I have designed Edlr to work well with common ruby patterns; you can include it, extend it, pass it blocks etc, and it wont blow up. If it does blow up its a bug.
+I have designed Eldr to work well with common ruby patterns; you can include it, extend it, pass it blocks etc, and it wont blow up. If it does blow up its a bug.
 
 You can add methods to your app (i.e helpers) by including them:
 
@@ -605,7 +602,7 @@ end
 
 ## Route Handlers: The Power of Action Objects
 
-In Edlr (just like in Rack) route handlers are things that respond to call. This means we can use everthing from procs, to blocks, to instances of a class.
+In Eldr (just like in Rack) route handlers are things that respond to call. This means we can use everthing from procs, to blocks, to instances of a class.
 
 If we wanted to we could do the following:
 
@@ -621,8 +618,7 @@ class App
 end
 ```
 
-This isn't as silly as it might seem. Its a common and powerful pattern that can clean up
-complex controllers.
+This isn't as silly as it might seem. Its a common and powerful pattern that can clean up complex controllers.
 
 Imagine we have a complex show action that takes up hundreds of lines. Our first inclination will be to split this up into different methods on our controller. This would make our show action a lot shorter; but we would have logic for our show action spread across our controller. Our other actions don't need to be able to access the show action's logic. It would be better to have all the logic for the show action in one object.
 
@@ -660,7 +656,7 @@ end
 run CatsController
 ```
 
-Once you start using this pattern you cant stop. Like nutella, you start putting it on everything, trying it on absurd things you know are wrong -- just in case it might work well.
+Once you start using this pattern you cant stop. Like nutella, you start putting it on everything, trying it on absurd things you know are wrong -- just in case it might taste good.
 
 Don't overuse action objects, but remember they are there when you want deliciousness.
 
@@ -702,3 +698,7 @@ response.status.should == 200
 Rack apps sure are easy to work with!
 
 See the spec/ in this repo for some specific rspec examples.
+
+## The End
+
+That does it for the for the book! Well, for now at least! Keep an eye on the repo for updates, bug fixes, corrections, additions, edits, and general overuse of nouns.

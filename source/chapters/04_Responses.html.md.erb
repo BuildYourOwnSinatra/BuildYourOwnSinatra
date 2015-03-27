@@ -65,7 +65,7 @@ And we can write to the body using an accessor:
 
 However, this is not the best way to write to the body. The client expects our response to have data about the size of the body. Without a Content-Length header clients tend to throw a fit.
 
-We can of course manually set the Content-Length header:
+We could manually set the Content-Length header:
 
 ```ruby
 @response = Rack::Response.new
@@ -97,7 +97,7 @@ Rack::Request also helps us set cookies:
 @response
 ```
 
-This hides a secret, cookies are just headers and we could do the same thing with:
+This hides a secret; cookies are just headers and we could do the same thing with:
 
 ```ruby
 @response = Rack::Response.new('Wow!')
@@ -107,6 +107,6 @@ This hides a secret, cookies are just headers and we could do the same thing wit
 
 Chances are though that we would have formatted our cookie improperly; most of us have no idea how a cookie looks, have heard of RFC 822 or even know what RFC is. set_cookie makes everything look and feel like a hash -- and we work with hashes everyday. The real world is a mess -- thank your Rack you don't have to deal with it.
 
-Everything in our response is just headers. When we use those fancy methods they are just making it easier to set headers. Take "`redirect()``" for example, it simply sets a 302 status code and a `Location` header. All of it, just headers.
+Everything in our response is just headers. When we use those fancy methods they are just making it easier to set headers. Take `redirect()` for example, it simply sets a 302 status code and a `Location` header -- all of it, just headers.
 
-At their core requests and responses are both merely wrapper objects. They give us a nice API to work with instead of forcing us to manipulate things manually. They are easy to extend and build upon just like Rack apps. If we wanted to we could use these simple patterns to build an entire MVC app without any framework.
+At their core, requests and responses are just wrapper objects. They give us a nice API to work with instead of forcing us to manipulate things manually. They are easy to extend and build upon just like Rack apps. If we wanted to we could use these simple patterns to build an entire MVC app without any framework.

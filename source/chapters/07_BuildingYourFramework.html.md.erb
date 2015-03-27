@@ -117,7 +117,7 @@ And then:
 $ bundle exec rspec
 ```
 
-If nothing explodes then we are good to go!
+If nothing explodes then you are good to go!
 
 <%= gh_branch 'building-eldr', 'step-1' %>
 
@@ -298,18 +298,6 @@ describe 'StackAppExample' do
   end
 end
 ```
-
-After running this we will get an error:
-
-```sh
-1) StackAppExample GET / returns the counter
-   Failure/Error: expect(response.body).to eq '1'
-
-     expected: "1"
-          got: "2"
-```
-
-This is because
 
 <% tip do %>
 
@@ -649,7 +637,9 @@ module Eldr
 end
 ```
 
-The recongizer takes its details from an env hash, so it can be used directly with a rack env. The pattern we match routes against and the http verb both come from the env hash. We can use the recognizer like this:
+The recongizer takes its details from an env hash, so it can be used directly with a rack env. The pattern we match routes against and the http verb both come from the env hash.
+
+We can use the recognizer like this:
 
 ```ruby
 routes = { 'GET' => [Eldr::Route.new(path: '/cats/:id'), Eldr::Route.new(path: '/dogs/:id')] }
@@ -734,7 +724,7 @@ Rails uses handlers that consist of a controller name and a method name. They lo
 to: 'Cats#show'
 ```
 
-This is easy to support. If the handler is a string then we split it into a controller and method name. initialize an instance of the controller and then call the method:
+This is easy to support. If the handler is a string then we split it into a controller and method name. initialize an instance of the controller, and then call the method:
 
 ```ruby
 def initialize
@@ -900,7 +890,7 @@ get '/', name: :index, do
 end
 ```
 
-The best place for filters is on the route itself. The we cann call them in the same #call method that calls the handler.
+The best place for filters is on the route itself. The we can call them in the same #call method that calls the handler.
 
 First let's add an array for holding them:
 

@@ -30,7 +30,7 @@ into stuff like:
 
 Regular expressions can seem like magic, but all they are is just sufficiently advanced strings.
 
-A router begins like most rack apps, with a call to call(). Sinatra's router is part of your app's class. When you add a router via get or another verb, the path string you passed it is turned into a regular expression. Globs become _*_, splats become captures, paths and strange characters get escaped.
+A router begins like most rack apps, with a call to call(). Sinatra's router is part of your app's class. When you add a route via get or another verb, the path string you passed it is turned into a regular expression. Globs become _*_, splats become captures, paths and strange characters get escaped.
 
 When rack hits Sinatra's call method, Sinatra loops through its routes and tries regexp.match against env['PATH_INFO']. When it finds a matching route it wraps it up in a Rack::Response and returns it.
 
@@ -100,7 +100,7 @@ run Router.new do
 end
 ```
 
-This is straightforward to implement. Our initialize method will take a block and then execute it on the scope of the router's instance. We will define methods for each HTTP verb, they will take a route and then add them to @routes:
+This is straightforward to implement. Our initialize method will take a block and then execute it on the scope of the router's instance. We will define methods for each HTTP verb, then they will take a route and add it to @routes:
 
 ```ruby
 class Router
@@ -294,4 +294,4 @@ This will allow us to ultize splats in our routes:
 get '/cats/:id', { |env, params| [200, {}, ["Caught the cat! #{params['id']}"]] }
 ```
 
-I have intentionally left out a lot of the ugly parts of url pattern matching. What we have built would get us 90% of the way but the other 10% is real a headache. Lots of things are valid urls and a big part of  router's job is taking a valid url and condensing it into just the stuff that matters. Turning stuff like /cA tsåå%%%/*.html/ into `/cats/(?<id>.)` and not blowing everything up in the process. Routes are hard.
+I have intentionally left out a lot of the ugly parts of url pattern matching. What we have built would get us 90% of the way but the other 10% is real a headache. Lots of things are valid urls and a big part of  router's job is taking a valid url and condensing it into just the stuff that matters. Turning stuff like /cA tsåå%%%/*.html/ into `/cats/(?<id>.)` and not blowing up in the process. Routes are hard.
