@@ -7,6 +7,7 @@ require 'eldr/sessions'
 require 'eldr/rendering'
 require 'eldr/responders'
 require 'rack/session/moneta'
+require 'rack/robustness'
 require 'build-your-own-sinatra'
 require_relative 'lib/tidy'
 require_relative 'lib/helpers'
@@ -25,7 +26,15 @@ class NotFound < StandardError
     Rack::Response.new message, 404
   end
 end
+
 class App < Eldr::App
+  # Catch Explosions of the worst kind
+  use Rack::Robustness do |g|
+    g.status 500
+    g.content_type 'text/plain'
+    g.body 'Sorry, my backend exploded! Mention me (@k_2052) and let me know!'
+  end
+
   include Helpers
   include AppHelpers
   include Eldr::Rendering

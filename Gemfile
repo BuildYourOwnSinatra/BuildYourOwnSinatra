@@ -8,6 +8,7 @@ gem 'activesupport', '4.1.9'
 
 group :app do
   gem 'rack-contrib'
+  gem 'rack-robustness'
   gem 'mime-types'
   gem 'eldr',           github: 'eldr-rb/eldr'
   gem 'eldr-action',    github: 'eldr-rb/eldr-action'
