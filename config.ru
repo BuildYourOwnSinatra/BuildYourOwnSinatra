@@ -6,6 +6,7 @@ require 'eldr/assets'
 require 'eldr/sessions'
 require 'eldr/rendering'
 require 'eldr/responders'
+require 'rack/session/moneta'
 require 'build-your-own-sinatra'
 require_relative 'lib/tidy'
 require_relative 'lib/helpers'
@@ -32,7 +33,14 @@ class App < Eldr::App
   include Eldr::Responders
   include Eldr::Assets
 
-  use Rack::Session::Redis, redis_server: "#{ENV['REDIS_URL']}/#{ENV['REDIS_NAMESPACE']}"
+  uri = URI.parse(ENV['MONGODB_URI'])
+  use Rack::Session::Moneta, store: Moneta.new(:Mongo, {
+    :host     => uri.host,
+    :port     => uri.port,
+    :db       => uri.path.gsub(/^\//, ''),
+    :user     => uri.user,
+    :password => uri.password,
+  })
   set :views_dir,  File.join(__dir__, 'source')
   set :public_dir, File.join(__dir__, 'build', 'html')
 

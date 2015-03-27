@@ -17,7 +17,7 @@ group :app do
   gem 'eldr-responders', github: 'eldr-rb/eldr-responders'
 
   gem 'omniauth-github',   '1.1.2'
-  gem 'redis-rack',        '1.5.0'
+  gem 'moneta',            '0.8.0'
   gem 'require_all',       '1.3.2'
   gem 'build-your-own-sinatra', github: 'BuildYourOwnSinatra/build-your-own-sinatra.gem'
 end
