@@ -87,7 +87,7 @@ class App < Eldr::App
     end
   end
 
-  get '/chapters/:slug' do
+  get '/chapters/:slug.?:format?' do
     file = "chapters/#{params['slug']}.html"
     if File.exists?(File.join(__dir__, "build/html/#{file}"))
       if preview_chapters.include? params['slug']
