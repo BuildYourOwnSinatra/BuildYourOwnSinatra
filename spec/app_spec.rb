@@ -1,21 +1,10 @@
 describe 'App' do
   describe 'GET /' do
     context 'logged in' do
-      let(:user) { FactoryGirl.create(:user_with_purchases) }
-
       it 'returns all available chapters' do
-        allow_any_instance_of(User).to receive(:can_read_chapter?).and_return(true)
-        response = get '/', nil, {'rack.session' => { "#{ENV['SESSION_ID']}" => user.id }}
-        expect(response.body).to have_tag('li.chapter.available.introduction')
-        expect(response.body).to have_tag('li.chapter.available.responses')
-      end
-    end
-
-    context 'logged out' do
-      it 'returns excerpt chapters' do
         response = get '/'
         expect(response.body).to have_tag('li.chapter.available.introduction')
-        expect(response.body).to have_tag('li.chapter.unavailable.responses')
+        expect(response.body).to have_tag('li.chapter.available.responses')
       end
     end
   end
