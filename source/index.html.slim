@@ -1,12 +1,11 @@
 .read.book-body
 	.login
-	    p
-	      | This is a preview. To access the full book &nbsp;
-	      a href="https://buildYourOwnSinatra.com" Buy It
-	      | &nbsp; Or &nbsp;
-	      a href="https://buildYourOwnSinatra.com/login" Login
+		markdown:
+		 This book operates on the honor system. You can read any chapters you like as a preview and then decide if you want to [Buy It](http://buildYourOwnSinatra.com/#buy)
 
 	section.table-of-contents
 	  h1 Table Of Contents
 	  ul.table-of-contents
-	    == partial 'partials/_preview_toc.slim'
+	    == partial 'partials/_full_toc.slim'
+
+	== partial 'partials/_sidebar.slim'

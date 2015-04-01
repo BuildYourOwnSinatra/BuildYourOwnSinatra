@@ -96,26 +96,18 @@ class App < Eldr::App
   end
 
   get '/downloads/screencasts/:slug', name: :screencast do
-    @screencast = @package.screencasts.find_by_slug params['slug']
+    @screencast = Screencast.find_by_slug params['slug']
     if @screencast
       redirect_to @screencast.file_url
     else
-      redirect_to '/upgrade'
+      raise NotFound, 'That Page Does Not Exist'
     end
   end
 
   get '/chapters/:slug.?:format?' do
     file = "chapters/#{params['slug']}.html"
     if File.exists?(File.join(__dir__, "build/html/#{file}"))
-      if preview_chapters.include? params['slug']
-        send_file(file)
-      else
-        if signed_in? and !current_user.package.nil?
-          send_file file
-        else
-          redirect_to '/upgrade'
-        end
-      end
+      send_file(file)
     else
       raise NotFound, 'That Page Does Not Exist'
     end
