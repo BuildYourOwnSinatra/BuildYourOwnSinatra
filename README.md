@@ -4,7 +4,7 @@ The source for the [Build Your Own Sinatra](https://buildYourOwnSinatra.com) ebo
 
 ## Building The Book
 
-First install all the gems:
+First install the gems:
 
 ```sh
 $ bundle install
@@ -64,7 +64,7 @@ For the tests to pass you must first build the HTML version of the book:
 $ bundle exec middleman build
 ```
 
-Then just run rspec:
+Then run rspec:
 
 ```sh
 $ bundle exec rspec
