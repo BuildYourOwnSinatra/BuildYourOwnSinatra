@@ -72,7 +72,10 @@ $ bundle exec rspec
 
 ## Live Coding
 
-The CSS is specifically adapted to be live edited using [Takana](https://github.com/mechio/takana). This comes with some drawbacks; 1. We have only use libsass features and 2. Sprocket asset paths cant be shared.
+The CSS is specifically adapted to be live edited using [Takana](https://github.com/mechio/takana). This comes with some drawbacks;
+
+1. We can only use libsass features
+2. Sprocket asset paths cant be shared
 
 First install a compatible version of bourbon:
 
