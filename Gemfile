@@ -20,6 +20,7 @@ group :app do
   gem 'omniauth-github',   '1.1.2'
   gem 'moneta',            '0.8.0'
   gem 'require_all',       '1.3.2'
+  gem 'mongo',             '1.12'
   gem 'build-your-own-sinatra', github: 'BuildYourOwnSinatra/build-your-own-sinatra.gem'
 end
 
