@@ -553,7 +553,7 @@ This allows us to construct a DSL for adding routes:
 
 ```ruby
 def self.get path, handler
-  add_route path: path, handler: Proc.new, method: 'GET'
+  add_route path: path, handler: handler, method: 'GET'
 end
 
 def self.put path, handler

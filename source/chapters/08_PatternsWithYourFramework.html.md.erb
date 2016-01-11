@@ -304,7 +304,7 @@ You can `raise` an error with any class that inherits from StandardError and res
 An error class looks like this:
 
 ```ruby
-class ErrorResponse < StandardErrro
+class ErrorResponse < StandardError
   def call(env)
     Rack::Response.new message, 500
   end
