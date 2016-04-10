@@ -1,0 +1,148 @@
+---
+title: Introduction
+slug: introduction
+date: 001/01/01
+number: 1
+toc:
+  - title: What We Will Build
+  - title: The Structure of this Book
+  - title: Commits, Notes, Warnings and Tips
+---
+
+# Introduction
+
+This book started out like most development books, with a cuss word or two. I couldn't get my helpers where I wanted them. I cant remember where I wanted them, I just remember I wanted them somewhere they didn't want to go. Because helpers are blocks and blocks unlike procs, stay where they are. All I wanted was to include my helpers from a module like a sane rational developer gosh dangit asfgjdhdh... sorry, I'm getting off track.
+
+I did the easy thing, I duplicated code. I copied my helpers to all the places I needed them. The solution was ugly and felt wrong, but it worked.
+
+I committed the code, finished the project, and went on with my life. But I still wondered: why in the world were helpers not modules?
+
+I don't learn the internals of my tools until I encounter a problem. Until I spend hours cussing and nights stressing over bugs I don't know how to fix. Until GitHub issues and StackOverflow become my last hopes. Until I get so fed up that I finally `git clone` and read the code.
+
+This book covers what I learned about the frameworks ruby developers use every day. From the awkwardness of BodyProxy to the wonderful simplicity of Rack's call. From Sinatra to Rails and every Rack app in-between.
+
+You will learn the insides of Rack, the specification nearly all ruby frameworks conform to. You will learn how Sinatra gets all its methods into a single file and how Rails get its into so many. You will learn how middleware works and learn why streaming with Rack is hacky. You will learn how to write middleware and raw MVC apps without any framework. Ultimately, you will learn enough to build your own framework.
+
+This is a book for every developer that has ever _been hurt_ by a lack of understanding of Rack. Every developer that burnt themselves with Sinatra, Rails or other
+
+- For every cuss word, pain point, confusion, and broken site.
+- For every time you didn't take the time to save time.
+- For every question you knew you should answer but could never find the time.
+
+## What We Will Build
+
+We will build a framework that looks like this:
+
+```ruby
+class App < Eldr::App
+  get '/posts' do
+    Rack::Response.new Post.all.to_json
+  end
+end
+```
+
+Its called Eldr and you can already fork it on [GitHub](https://github.com/eldr-rb/eldr).
+
+
+To get there we will build some Rack apps like this:
+
+```ruby
+app = Proc.new {|env| [200, {'Content-Type' => 'text/html'}, ["Okay, let's charge!"]]}
+```
+
+And this:
+
+```ruby
+class App
+  def call(env)
+    ["200",{"Content-Type" => "text/plain"}, ["Wait a minute. I'm the leader! I'm the one that says when we go."]]
+  end
+end
+```
+
+And we will build an entire mvc app on Rack without any framework. It will look like this:
+
+```ruby
+class TasksController
+  self.routes = {
+    '/tasks': :all
+  }
+
+  def call(env)
+    if route = @@routes[env['PATH_INFO']]
+      self.send(route, env)
+    else
+      Rack::Response.new('Not found', 404)
+    end
+  end
+
+  def all env
+    # ...
+  end
+end
+```
+
+## The Structure of this Book
+
+First we will learn Rack; the API ruby frameworks use to communicate with servers. We will build rack middleware, raw rack apps, and we will learn how to configure, boot, mix and match our Rack apps. We will cover everything from `call()` to Rack::Builder stacks.
+
+Then will dive into Rack's request and responses. We will learn how Rack parses requests and how we can modify it with our own data. We will learn how Sinatra::Request and Sinatra::Response merely extend Rack::Request and Rack::Response.
+
+We will build our own raw MVC app on rack and in the process learn the patterns that Ruby frameworks rest on. We will construct a simple router, build Rails like controllers, Sinatra like route blocks and helpers.
+
+We will bring this all together into a finished framework. A fast, minimal framework with a powerful router, flexible structure, and helpers as modules.
+
+## Commits, Notes, Warnings and Tips
+
+There will be code samples in this book. They will look like this:
+
+```ruby
+class Cats
+  def talk
+    'meow'
+  end
+
+  def destroy_world(world: nil)
+    world[:earthlings].delete_if { |earthling| earthling[:type] != :cat }
+  end
+end
+```
+
+At important points in the book there will be links to GitHub commits or branches. You can use them to keep your progress in sync with the book. They look like this:
+
+<%= commit    'yahweh/universe', '1',      'A commit Link' %>
+<%= gh_branch 'yahweh/universe', 'master', 'A branch link' %>
+
+When there is supplementary information it will appear in a note that looks like this:
+
+<% note do %>
+
+This is a note. It tells you notey things. Notey things are auxiliary information for something that we just learned about.
+
+For example, if we had been discussing oxen and how we might burden them with tasks, then a note might inform you that oxen only work under optimal weather conditions; including but not limited to an oxygen rich environment.
+
+This information would be important if for example, you intended to operate your oxen on a frozen moon. An ox would not do well on a frozen moon and you'd be better off enslaving some other species more suited to said moon's environment. Taking an ox with you would be ill advised in this scenario.
+
+<% end %>
+
+When I want to warn you about something it will look like this:
+
+<% warning do %>
+
+This is a warning. It warns you about things you are probably going to do. You might think you wont do the things but trust me you will. You will do the things. Take for example, parsing html.
+
+Now any developer knows you should not parse html with regular expressions. But chances are at some point you will anyway, because it will just be the easiest thing at the time. Maybe "native extensions" wouldn't compile, maybe a parser was just too big of a dependency or maybe you just wanted to grab one element --  what is the harm in parsing a link or two. It's just a link or two, no big deal right? WRONG
+
+A warning would show you how this could explode in your face. It might show you a screenshot of your house on fire or a movie about a RegularExpressions powered AI travelling back in time and killing your mom. Don't parse html with RegEx if you want to live.
+
+<% end %>
+
+When there is a tip for you it will appear like this:
+
+<% tip do %>
+
+This is a tip. It gives you helpful information that only the initiated have access to. Say for example, you work on a daily basis with magical glowing screens. You might not know that you can turn these screens off. A tip would inform you about this feature and how to use it.
+
+To turn off your glowing screen you can press the icon that looks like two fingers pinching a fingernail. Depending on the type of glowing screen you have, you might be able to turn it off simply by not touching it for a awhile. To see if your glowing screen supports this feature, do not touch it.
+
+<% end %>

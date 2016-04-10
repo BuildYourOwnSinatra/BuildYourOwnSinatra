@@ -1,0 +1,27 @@
+{
+  "name": "build-your-own-sinatra",
+  "version": "0.0.1",
+  "description": "A book on Rack and Sinatra",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BuildYourOwnSinatra/BuildYourOwnSinatra.git"
+  },
+  "keywords": [
+    "ruby",
+    "sinatra",
+    "rack"
+  ],
+  "author": "K-2052 <k@2052.me>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/BuildYourOwnSinatra/BuildYourOwnSinatra/issues"
+  },
+  "homepage": "https://github.com/BuildYourOwnSinatra/BuildYourOwnSinatra#readme"
+}
