@@ -1,6 +1,6 @@
 # Build Your Own Sinatra
 
-The source for the [Build Your Own Sinatra](https://buildYourOwnSinatra.com) ebook
+The former home of BuildYourOwnSinatra. It now lives along with all my other books and writings at [GetGood.at](https://GetGood.at/build-your-own/sinatra). Please see the [GetGood.at repo](https://github.com/GetGoodAt/GetGood.at) to file issues, bugs, feature requests etc.
 
 ## Building The Book
 
